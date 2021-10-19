@@ -54,7 +54,7 @@ manifest:
     # https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/guides/modules.html
     - name: zephyr
       repo-path: sdk-zephyr
-      revision: 15be5e615498377e9326cb2eb5819c7c62005299
+      revision: pull/637/head
       import:
         # In addition to the zephyr repository itself, NCS also
         # imports the contents of zephyr/west.yml at the above
@@ -98,16 +98,16 @@ manifest:
     # changes.
     - name: mcuboot
       repo-path: sdk-mcuboot
-      revision: 7606d9cad32c95a0d6fb7e872b070c71e85f931d
+      revision: pull/180/head
       path: bootloader/mcuboot
     - name: nrfxlib
       repo-path: sdk-nrfxlib
       path: nrfxlib
-      revision: 03bf990a704df2438f4219344085505e19417736
+      revision: pull/570/head
     - name: trusted-firmware-m
       repo-path: sdk-trusted-firmware-m
       path: modules/tee/tfm
-      revision: d2e93153863e7add9fae3849faf7de430258c0de
+      revision: pull/30/head
     - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
       repo-path: sdk-mcuboot
       path: modules/tee/tfm-mcuboot
@@ -175,7 +175,7 @@ manifest:
       - find-my
     - name: memfault-firmware-sdk
       path: modules/lib/memfault-firmware-sdk
-      revision: 0.26.1
+      revision: 0.27.1
       remote: memfault
 
   # West-related configuration for the nrf repository.
