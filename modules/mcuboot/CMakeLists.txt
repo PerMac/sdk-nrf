@@ -203,6 +203,14 @@ if(CONFIG_BOOTLOADER_MCUBOOT)
       )
   endif()
 
+  # Temporary hacky solution to enable USB CDC node in mcuboot for NCS builds
+  if (CONFIG_MCUBOOT_USB_SUPPORT)
+    add_overlay_dts(
+      mcuboot
+      ${ZEPHYR_NRF_MODULE_DIR}/modules/mcuboot/usb.overlay
+      )
+  endif()
+
   add_child_image(
     NAME mcuboot
     SOURCE_DIR ${ZEPHYR_MCUBOOT_MODULE_DIR}/boot/zephyr
