@@ -10,6 +10,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/crypto.h>
+#include "common/bt_str.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_ENOCEAN_DEBUG)
 #define LOG_MODULE_NAME bt_enocean
