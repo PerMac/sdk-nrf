@@ -203,7 +203,7 @@ static void nidd_send_and_recv(int fd)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int cid, pdn_id, fd;
 
@@ -234,4 +234,6 @@ void main(void)
 power_off:
 	modem_power_off();
 	printk("NIDD sample done\n");
+
+	return 0;
 }

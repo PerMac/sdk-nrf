@@ -514,7 +514,7 @@ static void on_all_events(struct app_msg_data *msg)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	struct app_msg_data msg = { 0 };
@@ -575,6 +575,7 @@ void main(void)
 
 		on_all_events(&msg);
 	}
+	return 0;
 }
 
 APP_EVENT_LISTENER(MODULE, app_event_handler);

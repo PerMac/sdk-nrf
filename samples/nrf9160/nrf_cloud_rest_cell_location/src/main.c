@@ -580,7 +580,7 @@ static void connect_to_network(void)
 	modem_time_wait();
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -589,7 +589,7 @@ void main(void)
 	err = init();
 	if (err) {
 		LOG_ERR("Initialization failed");
-		return;
+		return 0;
 	}
 
 	connect_to_network();

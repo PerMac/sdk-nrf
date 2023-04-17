@@ -157,7 +157,7 @@ void on_ble_core_ready(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int ret;
 

@@ -169,7 +169,7 @@ static int callback(const struct download_client_evt *event)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -179,7 +179,7 @@ void main(void)
 	/* Provision certificates before connecting to the network */
 	err = cert_provision();
 	if (err) {
-		return;
+		return 0;
 	}
 #endif
 
@@ -187,7 +187,7 @@ void main(void)
 	err = lte_lc_init_and_connect();
 	if (err) {
 		printk("Failed to connect to the LTE network, err %d\n", err);
-		return;
+		return 0;
 	}
 
 	printk("OK\n");
@@ -195,7 +195,7 @@ void main(void)
 	err = download_client_init(&downloader, callback);
 	if (err) {
 		printk("Failed to initialize the client, err %d", err);
-		return;
+		return 0;
 	}
 
 #if CONFIG_SAMPLE_COMPUTE_HASH
@@ -206,7 +206,7 @@ void main(void)
 	err = download_client_connect(&downloader, URL, &config);
 	if (err) {
 		printk("Failed to connect, err %d", err);
-		return;
+		return 0;
 	}
 
 	ref_time = k_uptime_get();
@@ -214,8 +214,10 @@ void main(void)
 	err = download_client_start(&downloader, URL, STARTING_OFFSET);
 	if (err) {
 		printk("Failed to start the downloader, err %d", err);
-		return;
+		return 0;
 	}
 
 	printk("Downloading %s\n", URL);
+
+	return 0;
 }

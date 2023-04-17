@@ -223,7 +223,7 @@ static int wait(int timeout)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int64_t next_msg_time = APP_COAP_SEND_INTERVAL_MS;
 	int err, received;
@@ -234,12 +234,12 @@ void main(void)
 
 	if (server_resolve() != 0) {
 		printk("Failed to resolve server name\n");
-		return;
+		return 0;
 	}
 
 	if (client_init() != 0) {
 		printk("Failed to initialize CoAP client\n");
-		return;
+		return 0;
 	}
 
 	next_msg_time = k_uptime_get();
@@ -294,4 +294,6 @@ void main(void)
 	}
 
 	(void)close(sock);
+
+	return 0;
 }

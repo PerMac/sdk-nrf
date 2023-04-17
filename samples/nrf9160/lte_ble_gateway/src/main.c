@@ -574,7 +574,7 @@ static void buttons_leds_init(void)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	LOG_INF("LTE Sensor Gateway sample started");
 
@@ -585,4 +585,6 @@ void main(void)
 	cloud_init();
 	modem_configure();
 	cloud_connect(NULL);
+
+	return 0;
 }

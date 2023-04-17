@@ -165,7 +165,7 @@ int tls_setup(int fd)
 	return 0;
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 	int fd;
@@ -188,14 +188,14 @@ void main(void)
 	err = pdn_default_ctx_cb_reg(pdn_event_handler);
 	if (err) {
 		printk("pdn_default_ctx_cb_reg() failed, err %d\n", err);
-		return;
+		return 0;
 	}
 
 #if !defined(CONFIG_SAMPLE_TFM_MBEDTLS)
 	/* Provision certificates before connecting to the LTE network */
 	err = cert_provision();
 	if (err) {
-		return;
+		return 0;
 	}
 #endif
 
@@ -203,7 +203,7 @@ void main(void)
 	err = lte_lc_init_and_connect();
 	if (err) {
 		printk("Failed to connect to the LTE network, err %d\n", err);
-		return;
+		return 0;
 	}
 	printk("OK\n");
 
@@ -220,7 +220,7 @@ void main(void)
 	err = getaddrinfo(HTTPS_HOSTNAME, HTTPS_PORT, &hints, &res);
 	if (err) {
 		printk("getaddrinfo() failed, err %d\n", errno);
-		return;
+		return 0;
 	}
 
 	inet_ntop(res->ai_family, &((struct sockaddr_in *)(res->ai_addr))->sin_addr, peer_addr,
@@ -297,4 +297,6 @@ clean_up:
 	(void)close(fd);
 
 	lte_lc_power_off();
+
+	return 0;
 }

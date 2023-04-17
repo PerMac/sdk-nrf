@@ -22,8 +22,9 @@ void enable_xtal(void)
 	(void)onoff_request(clk_mgr, &cli);
 }
 
-void main(void)
+int main(void)
 {
 	enable_xtal();
 	printk("The AT host sample started\n");
+	return 0;
 }

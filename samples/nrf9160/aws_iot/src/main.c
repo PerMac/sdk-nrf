@@ -497,7 +497,7 @@ static void date_time_event_handler(const struct date_time_evt *evt)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int err;
 
@@ -561,4 +561,6 @@ void main(void)
 	/* Postpone connecting to AWS IoT until date time has been obtained. */
 	k_sem_take(&date_time_obtained, K_FOREVER);
 	k_work_schedule(&connect_work, K_NO_WAIT);
+
+	return 0;
 }

@@ -51,7 +51,7 @@ static void sms_callback(struct sms_data *const data, void *context)
 	}
 }
 
-void main(void)
+int main(void)
 {
 	int handle = 0;
 	int ret = 0;
@@ -61,7 +61,7 @@ void main(void)
 	handle = sms_register_listener(sms_callback, NULL);
 	if (handle) {
 		printk("sms_register_listener returned err: %d\n", handle);
-		return;
+		return 0;
 	}
 
 	printk("SMS sample is ready for receiving messages\n");
@@ -86,4 +86,5 @@ void main(void)
 	 * However, this sample will continue to be registered for
 	 * received SMS messages and they can be seen in serial port log.
 	 */
+	return 0;
 }
