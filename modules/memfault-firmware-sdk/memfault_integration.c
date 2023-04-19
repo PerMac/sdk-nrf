@@ -26,6 +26,13 @@
 
 LOG_MODULE_REGISTER(memfault_ncs, CONFIG_MEMFAULT_NCS_LOG_LEVEL);
 
+// workaround for https://github.com/memfault/memfault-firmware-sdk/issues/49
+extern void z_arm_nmi_set_handler(void (*pHandler)(void));
+void z_NmiHandlerSet(void (*pHandler)(void))
+{
+	z_arm_nmi_set_handler(pHandler);
+}
+
 #define IMEI_LEN 15
 
 #if defined(CONFIG_SOC_NRF9160)
