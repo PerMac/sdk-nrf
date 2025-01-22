@@ -377,7 +377,7 @@ int cloud_wrap_init(cloud_wrap_evt_handler_t event_handler)
 	LOG_DBG("LwM2M endpoint name: %s", endpoint_name);
 
 	if (IS_ENABLED(CONFIG_LWM2M_INTEGRATION_FLUSH_SESSION_CACHE)) {
-		int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_DTLS_1_2);
+		int fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_DTLS_1_2);
 
 		if (fd < 0) {
 			LOG_ERR("Failed to create socket: %d", errno);
@@ -386,13 +386,13 @@ int cloud_wrap_init(cloud_wrap_evt_handler_t event_handler)
 
 		int cache_flush = 1U;
 
-		err = setsockopt(fd, SOL_TLS, TLS_SESSION_CACHE_PURGE,
-				 &cache_flush, sizeof(cache_flush));
+		err = zsock_setsockopt(fd, SOL_TLS, TLS_SESSION_CACHE_PURGE,
+				       &cache_flush, sizeof(cache_flush));
 		if (err < 0) {
 			LOG_ERR("Failed to set flush session cache: %d", -errno);
 		}
 
-		err = close(fd);
+		err = zsock_close(fd);
 		if (err) {
 			LOG_ERR("Failed to close socket: %d", errno);
 			return -errno;
