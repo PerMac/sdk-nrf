@@ -138,8 +138,8 @@ static void pofwarn_handler(void)
 static void ip_traffic(void)
 {
 	int err;
-	struct addrinfo *res;
-	struct addrinfo hints = {
+	struct zsock_addrinfo *res;
+	struct zsock_addrinfo hints = {
 		.ai_family = AF_INET,
 		.ai_socktype = SOCK_STREAM,
 	};
@@ -151,13 +151,13 @@ static void ip_traffic(void)
 	static int index;
 
 	printk("Executing DNS lookup for '%s'...\n", hosts[index % 5]);
-	err = getaddrinfo(hosts[index % 5], NULL, &hints, &res);
+	err = zsock_getaddrinfo(hosts[index % 5], NULL, &hints, &res);
 	if (err) {
 		printk("getaddrinfo() failed, err %d\n", errno);
 		return;
 	}
 
-	freeaddrinfo(res);
+	zsock_freeaddrinfo(res);
 
 	index++;
 }

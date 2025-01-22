@@ -38,7 +38,7 @@ static void socket_transmission_work_fn(struct k_work *work)
 	 */
 	int rai = RAI_LAST;
 
-	err = setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
+	err = zsock_setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
 	if (err) {
 		printk("Failed to set socket option, error: %d\n", errno);
 	}
@@ -49,13 +49,13 @@ static void socket_transmission_work_fn(struct k_work *work)
 	 */
 	int rai = RAI_ONGOING;
 
-	err = setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
+	err = zsock_setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
 	if (err) {
 		printk("Failed to set socket option, error: %d\n", errno);
 	}
 #endif
 
-	err = send(client_fd, buffer, sizeof(buffer), 0);
+	err = zsock_send(client_fd, buffer, sizeof(buffer), 0);
 	if (err < 0) {
 		printk("Failed to transmit UDP packet, error: %d\n", errno);
 	}
@@ -65,7 +65,7 @@ static void socket_transmission_work_fn(struct k_work *work)
 	 */
 	int rai = RAI_NO_DATA;
 
-	err = setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
+	err = zsock_setsockopt(client_fd, SOL_SOCKET, SO_RAI, &rai, sizeof(rai));
 	if (err) {
 		printk("Failed to set socket option, error: %d\n", errno);
 	}
@@ -145,19 +145,21 @@ static int socket_connect(void)
 	server4->sin_family = AF_INET;
 	server4->sin_port = htons(CONFIG_UDP_SERVER_PORT);
 
-	inet_pton(AF_INET, CONFIG_UDP_SERVER_ADDRESS_STATIC, &server4->sin_addr);
+	zsock_inet_pton(AF_INET, CONFIG_UDP_SERVER_ADDRESS_STATIC,
+			&server4->sin_addr);
 
-	client_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	client_fd = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (client_fd < 0) {
 		printk("Failed to create UDP socket, error: %d\n", errno);
 		err = -errno;
 		return err;
 	}
 
-	err = connect(client_fd, (struct sockaddr *)&host_addr, sizeof(struct sockaddr_in));
+	err = zsock_connect(client_fd, (struct sockaddr *)&host_addr,
+			    sizeof(struct sockaddr_in));
 	if (err < 0) {
 		printk("Failed to connect socket, error: %d\n", errno);
-		close(client_fd);
+		zsock_close(client_fd);
 		return err;
 	}
 

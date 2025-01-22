@@ -133,7 +133,7 @@ static void nidd_socket_close(int fd)
 {
 	int err;
 
-	err = close(fd);
+	err = zsock_close(fd);
 	if (err == 0) {
 		printk("Closed socket %d\n", fd);
 	} else {
@@ -145,7 +145,7 @@ static int nidd_socket_setup(int pdn_id)
 {
 	int fd, err;
 
-	fd = socket(AF_PACKET, SOCK_RAW, 0);
+	fd = zsock_socket(AF_PACKET, SOCK_RAW, 0);
 	if (fd >= 0) {
 		printk("Created socket %d\n", fd);
 	} else {
@@ -154,7 +154,8 @@ static int nidd_socket_setup(int pdn_id)
 	}
 
 	if (IS_ENABLED(CONFIG_NIDD_ALLOC_NEW_CID)) {
-		err = setsockopt(fd, SOL_SOCKET, SO_BINDTOPDN, &pdn_id, sizeof(pdn_id));
+		err = zsock_setsockopt(fd, SOL_SOCKET, SO_BINDTOPDN,
+				       &pdn_id, sizeof(pdn_id));
 		if (err == 0) {
 			printk("Bound to PDN ID %d\n", pdn_id);
 		} else {
@@ -167,7 +168,8 @@ static int nidd_socket_setup(int pdn_id)
 		.tv_sec = 5
 	};
 
-	err = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
+	err = zsock_setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
+			       &recv_timeout, sizeof(recv_timeout));
 	if (err != 0) {
 		printk("Set receive timeout failed, error: %d, errno: %d\n", err, errno);
 		goto error_close_socket;
@@ -186,7 +188,7 @@ static void nidd_send_and_recv(int fd)
 	char buffer[256];
 	ssize_t len;
 
-	len = send(fd, CONFIG_NIDD_PAYLOAD, sizeof(CONFIG_NIDD_PAYLOAD)-1, 0);
+	len = zsock_send(fd, CONFIG_NIDD_PAYLOAD, sizeof(CONFIG_NIDD_PAYLOAD)-1, 0);
 	if (len == sizeof(CONFIG_NIDD_PAYLOAD)-1) {
 		printk("Sent %d bytes\n", len);
 	} else {
@@ -194,7 +196,7 @@ static void nidd_send_and_recv(int fd)
 		return;
 	}
 
-	len = recv(fd, buffer, sizeof(buffer), 0);
+	len = zsock_recv(fd, buffer, sizeof(buffer), 0);
 	if (len > 0) {
 		printk("Received %d bytes: %s\n", len, buffer);
 	} else if (len < 0) {
