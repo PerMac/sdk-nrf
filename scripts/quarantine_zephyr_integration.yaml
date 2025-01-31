@@ -269,6 +269,3 @@
     - nrf52dk/nrf52832
   comment: "Configurations excluded to limit resources usage in integration builds"
 
-- platforms:
-    - native_posix
-  comment: "native_posix will be removed soon - native_sim platform is the default simulator now"
