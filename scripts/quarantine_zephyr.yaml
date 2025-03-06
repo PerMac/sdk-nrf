@@ -285,7 +285,7 @@
     - drivers.sensor.qdec
   platforms:
     - nrf5340dk/nrf5340/cpuapp
-  comment: "Pin alignment is needed."
+  comment: "Pin alignment is needed. "
 
 # ---------------------------------   Won't fix section -----------------------------------
 
