@@ -281,6 +281,12 @@
     - nrf54l15dk/nrf54l15/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-31783"
 
+- scenarios:
+    - drivers.sensor.qdec
+  platforms:
+    - nrf5340dk/nrf5340/cpuapp
+  comment: "Pin alignment is needed."
+
 # ---------------------------------   Won't fix section -----------------------------------
 
 - scenarios:
