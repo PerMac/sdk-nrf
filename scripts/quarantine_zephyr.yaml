@@ -308,6 +308,12 @@
     - nrf52dk/nrf52832
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-33279"
 
+- scenarios:
+    - usb.device_next.build_all
+  platforms:
+    - qemu_cortex_m3/ti_lm3s6965
+  comment: "https://github.com/zephyrproject-rtos/zephyr/issues/89484"
+
 # ---------------------------------   Won't fix section -----------------------------------
 
 - scenarios:
@@ -593,3 +599,9 @@
   platforms:
     - native_sim/native
   comment: "clang is not available in our toolchain"
+
+- scenarios:
+    - sample.bluetooth.peripheral_hr.frdm_kw41z_shield
+  platforms:
+    - nrf5340dk/nrf5340/cpuapp/ns
+  comment: "Not compatible"
