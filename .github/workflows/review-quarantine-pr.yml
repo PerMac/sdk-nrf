@@ -1,34 +1,140 @@
-name: Quarantine validation
+name: Review Quarantine PR
 
 on:
+  # All PRs come from forks -> use pull_request_target to allow commenting.
   pull_request_target:
-    branches:
-      - main
-      - v*-branch
-    paths:
-      - '**/scripts/quarantine*.yaml'
+    types: [opened, reopened, synchronize, ready_for_review]
 
 permissions:
   contents: read
-  pull-requests: write
+  issues: write        # required to create/update PR (issue) comments
+  pull-requests: read  # read PR metadata
 
 jobs:
-  quarantine-info:
-    runs-on: ubuntu-24.04
+  quarantine-notify:
+    name: Notify maintainers for quarantine changes
+    permissions:
+      issues: write       # required for creating/updating PR comments
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+
+    env:
+      QUARANTINE_FILE: scripts/quarantine.yaml
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      HEAD_FULL: ${{ github.event.pull_request.head.repo.full_name }}
+      HEAD_REF: ${{ github.event.pull_request.head.ref }}
+
     steps:
-      - name: Add information about quarantine process
+      - name: Capture PR metadata
+        id: meta
         run: |
-          # Find existing comment
-          comment_id=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("Quarantine Process")) | .id' || echo "")
-          if [[ -z "$comment_id" ]]; then
-            # No comment - create new one
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_full=$HEAD_FULL" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$HEAD_REF" >> "$GITHUB_OUTPUT"
+
+      # Checkout the trusted base repo; do NOT checkout the untrusted PR head in pull_request_target
+      - name: Checkout base repository (safe)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch PR HEAD safely (no checkout, no token)
+        run: |
+          set -eu
+          export GIT_TERMINAL_PROMPT=0
+          # Ensure no auth header leaks to the public fork.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git remote add fork "https://github.com/${{ steps.meta.outputs.head_full }}.git"
+          git -c http.https://github.com/.extraheader= fetch --no-tags --depth=1 fork "${{ steps.meta.outputs.head_ref }}":pr_head
+
+      - name: Detect changes in quarantine file
+        id: changed
+        run: |
+          if git diff --name-only "${{ steps.meta.outputs.base_sha }}" pr_head -- "$QUARANTINE_FILE" | grep -q "$QUARANTINE_FILE"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Stop early if not changed
+        if: steps.changed.outputs.changed != 'true'
+        run: echo "Quarantine file not changed; skipping."
+
+      - name: Generate diff of quarantine file only (U100 context)
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          # Up to 100 lines of context on each side of the change for robust YAML parsing
+          git diff -U100 "${{ steps.meta.outputs.base_sha }}" pr_head -- "$QUARANTINE_FILE" > diff_quarantine.txt
+          head -n 100 diff_quarantine.txt || true
+
+      - name: Install Python deps
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyyaml
+
+      - name: Prepare comment body (token-free Python)
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          python3 scripts/ci/quarantine_notifier.py \
+            --repo-root . \
+            --diff-file diff_quarantine.txt \
+            --output quarantine_comment.md \
+            --audit-json quarantine_audit.json \
+            --inventory-json scenario_inventory.json \
+            --ref "${{ steps.meta.outputs.head_sha }}" \
+            --strict-missing-codeowners \
+            --strict-flag-file strict_missing_codeowners.flag
+
+      - name: Post or update PR comment (base context)
+        if: steps.changed.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          BODY: >
-            Since quarantine was modified, please make sure
-            you are following the process described in
-            [Quarantine Process](https://nordicsemi.atlassian.net/wiki/spaces/NCS/pages/1104576817/Quarantine).
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -s quarantine_comment.md ]; then
+            echo "No maintainer notifications to post."; exit 0;
+          fi
+
+          BODY="$(cat quarantine_comment.md)"
+          existing_id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments?per_page=100" \
+            --jq '.[] | select(.body | contains("<!-- quarantine-notifier -->")) | .id' | head -n1 || true)
+
+          if [ -n "$existing_id" ]; then
+            echo "Updating existing quarantine notification comment (id=$existing_id)."
+            gh api -X PATCH "repos/${REPO}/issues/comments/${existing_id}" -f body="$BODY" > /dev/null
+          else
+            echo "Creating quarantine notification comment."
+            gh api -X POST "repos/${REPO}/issues/${PR}/comments" -f body="$BODY" > /dev/null
+          fi
+
+      - name: Upload audit artifacts
+        if: steps.changed.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quarantine-audit-pr${{ github.event.pull_request.number }}-run${{ github.run_id }}
+          path: |
+            diff_quarantine.txt
+            quarantine_comment.md
+            quarantine_audit.json
+            scenario_inventory.json
+            strict_missing_codeowners.flag
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Fail if strict violation (missing CODEOWNERS)
+        if: steps.changed.outputs.changed == 'true'
+        run: |
+          if [ -f strict_missing_codeowners.flag ]; then
+            echo "Strict mode: Missing CODEOWNERS detected. Failing the job."
+            cat strict_missing_codeowners.flag
+            exit 1
+          else
+            echo "Strict mode: no violations."
+          fi
