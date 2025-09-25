@@ -1,0 +1,199 @@
+name: Review Quarantine PR (Generate)
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "scripts/quarantine*.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quarantine-generate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    name: Generate quarantine comment artifacts
+    runs-on: ubuntu-24.04
+
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+
+    steps:
+      # Checkout PR head (fork) – read-only
+      - name: Checkout PR head
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ env.HEAD_SHA }}
+          path: pr/nrf
+          fetch-depth: 0
+
+      # Checkout the trusted base repo to run the notifier from trusted code
+      - name: Checkout base repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ env.BASE_SHA }}
+          path: base/nrf
+          fetch-depth: 1
+
+      # Python setup & deps
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml west pathspec
+
+
+      - name: Detect changed quarantine YAML files (base vs PR)
+        id: quarantine_changed_files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # NOTE: We intentionally write to a tmpfile first instead of using
+          # `mapfile < <(pipeline)`. Bash process substitution swallows failures
+          # inside the pipeline (even with `set -euo pipefail`), which can cause
+          # silent success on sed/find errors. Writing to a file ensures any
+          # failure aborts the step and fails the workflow.
+          tmpfile=$(mktemp)
+
+          {
+            find ./pr/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+            find ./base/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+          } \
+          | sed -E 's#^\./(pr|base)/##' \
+          | sort -u \
+          > "$tmpfile"
+
+          mapfile -t all_files < "$tmpfile"
+          rm -f "$tmpfile"
+
+          changed=()
+          for rel in "${all_files[@]}"; do
+            b="base/$rel"
+            p="pr/$rel"
+
+            # affected if content differs
+            if ! cmp -s "$b" "$p"; then
+              changed+=("$rel")
+            fi
+          done
+
+          echo "Changed quarantine files count: ${#changed[@]}"
+          if [[ ${#changed[@]} -gt 0 ]]; then
+            printf '%s\n' "${changed[@]}"
+          fi
+
+          # Expose as multiline output for next step
+          {
+            echo "files<<EOF"
+            printf '%s\n' "${changed[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Compare only affected quarantine YAMLs (base vs PR)
+        shell: bash
+        id: compare_quarantine
+        working-directory: base
+        run: |
+          set -euo pipefail
+          echo "west init -l ./nrf"
+          west init -l ./nrf
+          echo "update zephyr --narrow"
+          west update zephyr --narrow
+          export ZEPHYR_BASE="zephyr"
+          OUTDIR="quarantine-diff-results"
+          mkdir -p "$OUTDIR"
+
+          files="${{ steps.quarantine_changed_files.outputs.files }}"
+
+          while IFS= read -r rel; do
+            [[ -z "$rel" ]] && continue
+            echo "== Comparing affected quarantine file: $rel =="
+            python3 nrf/scripts/compare_quarantine.py "../pr/$rel" "$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+          done <<< "$files"
+
+      - name: Combine quarantine added/removed files
+        shell: bash
+        working-directory: base
+        run: |
+          set -euo pipefail
+
+          DIR="./quarantine-diff-results"
+          OUT_ADDED="$DIR/configurations_added_combined.txt"
+          OUT_REMOVED="$DIR/configurations_removed_combined.txt"
+
+          # Make globs expand to nothing instead of literal patterns when no match
+          shopt -s nullglob
+
+          added_files=()
+          for f in "$DIR"/configurations_added*.txt; do
+            [[ "$f" == "$OUT_ADDED" ]] && continue
+            added_files+=("$f")
+          done
+
+          removed_files=()
+          for f in "$DIR"/configurations_removed*.txt; do
+            [[ "$f" == "$OUT_REMOVED" ]] && continue
+            removed_files+=("$f")
+          done
+
+          # Combine (truncate outputs first)
+          : > "$OUT_ADDED"
+          : > "$OUT_REMOVED"
+
+          if (( ${#added_files[@]} > 0 )); then
+            cat "${added_files[@]}" >> "$OUT_ADDED"
+            echo "Wrote: $OUT_ADDED (from ${#added_files[@]} file(s))"
+          else
+            echo "No matching files for added: $DIR/configurations_added*.txt"
+          fi
+
+          if (( ${#removed_files[@]} > 0 )); then
+            cat "${removed_files[@]}" >> "$OUT_REMOVED"
+            echo "Wrote: $OUT_REMOVED (from ${#removed_files[@]} file(s))"
+          else
+            echo "No matching files for removed: $DIR/configurations_removed*.txt"
+          fi
+
+      - name: Upload quarantine scenario diff artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quarantine-scenario-diff
+          path: base/quarantine-diff-results/*.txt
+          if-no-files-found: warn
+
+      # Run notifier script from base repo
+      - name: Prepare comment body
+        working-directory: base/nrf
+        run: |
+          set -euo pipefail
+          export ZEPHYR_BASE="../zephyr"
+          python scripts/ci/quarantine_notifier.py \
+            --repo-root . \
+            --added-file "../quarantine-diff-results/configurations_added_combined.txt" \
+            --removed-file "../quarantine-diff-results/configurations_removed_combined.txt" \
+            --scenario-map "../quarantine-diff-results/scenario_map.txt" \
+            --output quarantine_comment.md \
+            --ref "${HEAD_SHA}" \
+
+      # PR number is not accessible between workflows in a fork and a base context
+      - name: Store PR number for Publish (as artifact file)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${{ github.event.pull_request.number }}" > pr_number.txt
+
+      # Upload artifacts for the publish workflow (includes PR number)
+      - name: Upload artifacts for publish workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: quarantine-artifacts-pr${{ env.PR_NUMBER }}-sha${{ env.HEAD_SHA }}
+          path: |
+            base/nrf/quarantine_comment.md
+            pr_number.txt
+          if-no-files-found: ignore
+          retention-days: 30
