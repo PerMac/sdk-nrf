@@ -268,7 +268,6 @@ def make_comment(
     owner_to_removed: Dict[str, List[Tuple[str, str]]],
     unowned_added: List[Tuple[str, str]],
     unowned_removed: List[Tuple[str, str]],
-    ref: str,
     repo_full: Optional[str],
     strict: bool,
 ) -> str:
@@ -362,7 +361,7 @@ def main() -> int:
         Path(args.output).write_text("", encoding="utf-8")
         write_json(Path(args.audit_json), {"error": "diff_not_found"})
         write_json(Path(args.inventory_json), {})
-        return 0
+        return 1
 
     diff_text = diff_path.read_text(encoding="utf-8", errors="ignore")
     added_patterns, removed_patterns = parse_diff_for_scenarios(diff_text)
@@ -378,25 +377,24 @@ def main() -> int:
         owner_to_removed=owned_del,
         unowned_added=unowned_add,
         unowned_removed=unowned_del,
-        ref=args.ref,
         repo_full=repo_full,
         strict=args.strict_missing_codeowners,
     )
     Path(args.output).write_text(body, encoding="utf-8")
 
     # Inventory JSON (scenario -> [paths])
-    write_json(Path(args.inventory_json), {k: sorted(list(v)) for k, v in sorted(scenario_map.items())})
+    write_json(Path(args.inventory_json), {k: sorted(v) for k, v in sorted(scenario_map.items())})
 
     # Audit JSON summary
     audit = {
         "repo": repo_full,
         "ref": args.ref,
         "quarantine_diff_file": str(diff_path),
-        "added_patterns": sorted(list(added_patterns)),
-        "removed_patterns": sorted(list(removed_patterns)),
+        "added_patterns": sorted(added_patterns),
+        "removed_patterns": sorted(removed_patterns),
         "expanded": {
-            "added": sorted(list(expanded_add)),
-            "removed": sorted(list(expanded_del)),
+            "added": sorted(expanded_add),
+            "removed": sorted(expanded_del),
         },
         "owners": {
             key: {

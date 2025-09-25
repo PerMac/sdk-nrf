@@ -7,21 +7,16 @@ on:
     types: [completed]
 
 permissions:
+  actions: read
   contents: read
-  issues: write          # create/update PR (issue) comments
-  pull-requests: write   # needed to comment on PRs
+  issues: write
+  pull-requests: write
 
 jobs:
   publish-comment:
     name: Publish quarantine comment to PR (only after Generate succeeds)
     runs-on: ubuntu-24.04
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    permissions:
-      actions: read
-      contents: read
-      issues: write
-      pull-requests: write
 
     env:
       # Use workflow_run payload instead of pull_request context
