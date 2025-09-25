@@ -73,7 +73,7 @@ jobs:
       - name: Prepare comment body (token-free Python)
         if: steps.changed.outputs.changed == 'true'
         run: |
-          python3 .github/scripts/ci/quarantine_notifier.py \
+          python3 scripts/ci/quarantine_notifier.py \
             --repo-root . \
             --diff-file diff_quarantine.txt \
             --output quarantine_comment.md \
