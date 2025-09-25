@@ -1,0 +1,124 @@
+name: Review Quarantine PR (Publish)
+
+on:
+  # Run only after the generator workflow completes
+  workflow_run:
+    workflows: ["Review Quarantine PR (Generate)"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write          # create/update PR (issue) comments
+  pull-requests: write   # needed to comment on PRs
+
+jobs:
+  publish-comment:
+    name: Publish quarantine comment to PR (only after Generate succeeds)
+    runs-on: ubuntu-24.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+
+    env:
+      # Use workflow_run payload instead of pull_request context
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Download generated artifacts from the triggering run
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Download artifacts from the exact run that triggered this workflow
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ./quarantine-artifacts
+
+      - name: Read PR number from artifact (fork-safe)
+        id: read_pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find the first pr_number.txt among all artifact subfolders
+          PR_FILE="$(find ./quarantine-artifacts -type f -name 'pr_number.txt' | head -n1 || true)"
+          if [[ -z "${PR_FILE}" ]]; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "No pr_number.txt found in artifacts" >&2
+          else
+            PR_NUM="$(head -n1 "${PR_FILE}" | tr -d '\r')"
+            echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
+            echo "PR number recovered from artifact: ${PR_NUM}"
+          fi
+
+      - name: Export PR_NUMBER to env (retain original if present)
+        shell: bash
+        env:
+          FROM_ART: ${{ steps.read_pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          # Prefer the workflow_run-provided PR number if present; otherwise use artifact value
+          CURRENT="${PR_NUMBER:-}"
+          FROM_ART="${FROM_ART}"
+          if [[ -z "${CURRENT}" ]]; then
+            if [[ -z "${FROM_ART}" ]]; then
+              echo "ERROR: PR number is not available (workflow_run payload empty and pr_number.txt missing)." >&2
+              exit 1
+            fi
+            echo "PR_NUMBER=${FROM_ART}" >> "$GITHUB_ENV"
+          else
+            echo "PR_NUMBER=${CURRENT}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Check for comment content
+        id: has_comment
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find the file regardless of exact artifact name
+          COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
+          if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post or update PR comment
+        if: steps.has_comment.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BODY="$(cat "${{ steps.has_comment.outputs.comment_file }}")"
+
+          # Try to find an existing quarantine-notification comment to update
+          existing_id="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments --jq '.comments[]
+            | select(.body | contains("Quarantine update – notifying maintainers"))
+            | .id' || echo "")"
+
+          if [[ -n "$existing_id" ]]; then
+            echo "Updating existing quarantine notification comment (id=$existing_id)."
+            gh api -X PATCH "repos/$REPO/issues/comments/$existing_id" -f body="$BODY" >/dev/null
+          else
+            echo "Creating quarantine notification comment."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null
+          fi
+
+      - name: Upload audit artifacts (mirror)
+        if: steps.has_comment.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quarantine-audit-pr${{ env.PR_NUMBER }}-run${{ github.run_id }}
+          path: |
+            ./quarantine-artifacts/**/diff_quarantine.txt
+            ./quarantine-artifacts/**/quarantine_comment.md
+            ./quarantine-artifacts/**/quarantine_audit.json
+            ./quarantine-artifacts/**/scenario_inventory.json
+            ./quarantine-artifacts/**/strict_missing_codeowners.flag
+          if-no-files-found: ignore
+          retention-days: 30
