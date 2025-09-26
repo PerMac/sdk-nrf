@@ -160,7 +160,9 @@ def discover_scenarios(repo_root: Path) -> Dict[str, Set[str]]:
                     for scenario in tests.keys():
                         s = str(scenario).strip()
                         if s:
-                            mapping.setdefault(s, set()).add(str(p.as_posix()))
+                            rel = p.resolve().relative_to(repo_root.resolve()).as_posix()
+                            mapping.setdefault(s, set()).add(rel)
+
             except Exception:
                 continue
     return mapping
@@ -216,6 +218,8 @@ def codeowners_pattern_to_regex(pattern: str) -> re.Pattern:
 def owners_for_path(path: str, rules: List[Tuple[str, List[str]]]) -> List[str]:
     matched: Optional[List[str]] = None
     for pat, owners in rules:
+        if "samples/matter" in pat:
+            print("saf")
         if codeowners_pattern_to_regex(pat).search(path):
             matched = owners  # LAST match wins
     return matched or []
