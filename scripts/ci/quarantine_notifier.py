@@ -218,8 +218,6 @@ def codeowners_pattern_to_regex(pattern: str) -> re.Pattern:
 def owners_for_path(path: str, rules: List[Tuple[str, List[str]]]) -> List[str]:
     matched: Optional[List[str]] = None
     for pat, owners in rules:
-        if "samples/matter" in pat:
-            print("saf")
         if codeowners_pattern_to_regex(pat).search(path):
             matched = owners  # LAST match wins
     return matched or []
