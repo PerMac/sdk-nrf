@@ -60,15 +60,17 @@ DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
 
 def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
     """
-    Parse unified diff (with context, e.g. -U100) and extract values added/removed
-    under 'scenarios:' YAML keys.
+    Parse unified diff (with context, e.g. -U100) and extract values
+    added/removed under 'scenarios:' YAML keys.
     Returns: (added_patterns, removed_patterns)
     """
     added: Set[str] = set()
     removed: Set[str] = set()
 
     in_scenarios = False
-    scenarios_indent = None  # spaces count for the 'scenarios:' key
+    scenarios_indent = None  # indentation (spaces) of the 'scenarios:' key
+
+    DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
 
     def get_prefix_and_body(line: str) -> Tuple[str, str]:
         if not line:
@@ -76,17 +78,18 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
         ch = line[0]
         if ch in "+- ":
             return ch, line[1:]
-        return "", line
+        return "", line  # shouldn't happen in a standard unified diff
 
     def leading_spaces(s: str) -> int:
         return len(s) - len(s.lstrip(" "))
 
     def strip_inline_comment(val: str) -> str:
+        # remove trailing " # ..." comment fragments (unquoted)
         i = val.find(" #")
         return val[:i] if i != -1 else val
 
     def clean_value(val: str) -> str:
-        v = strip_inline_comment(val.strip()).strip()
+        v = strip_inline_comment(val.strip())
         if (v.startswith("'") and v.endswith("'")) or (v.startswith('"') and v.endswith('"')):
             v = v[1:-1]
         return v.strip()
@@ -96,33 +99,35 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
             continue
 
         prefix, body = get_prefix_and_body(raw)
-        if body.startswith(" "):
-            body = body[1:]
+        # DO NOT pre-trim a leading space from body; measure indent as-is
         indent = leading_spaces(body)
         trimmed = body.lstrip()
 
-        # Enter scenarios block
-        if re.fullmatch(r"scenarios:\s*", trimmed):
+        # Enter scenarios block whenever we see a 'scenarios:' key (context, +, or -)
+        if re.fullmatch(r"- scenarios:\s*", trimmed):
             in_scenarios = True
             scenarios_indent = indent
             continue
 
-        # Leave scenarios on new YAML key at same or lower indent
-        if in_scenarios and re.fullmatch(r"[A-Za-z0-9_]+:\s*", trimmed) and (indent <= (scenarios_indent or 0)):
+        # Leave scenarios on a new YAML key at same or shallower indent
+        # (allowing letters, digits, underscore, dot, and hyphen in keys)
+        if in_scenarios and re.fullmatch(r"[A-Za-z0-9_.-]+:\s*", trimmed) and indent <= (scenarios_indent or 0):
             in_scenarios = False
             scenarios_indent = None
             continue
 
         # Collect list items within scenarios
-        if in_scenarios and re.match(r"^-\s+", trimmed):
-            val = re.sub(r"^-\s+", "", trimmed, count=1)
-            val = clean_value(val)
-            if not val:
-                continue
-            if prefix == "+":
-                added.add(val)
-            elif prefix == "-":
-                removed.add(val)
+        if in_scenarios:
+            m = re.match(r"^-\s+(.*)$", trimmed)
+            if m:
+                val = clean_value(m.group(1))
+                if not val:
+                    continue
+                if prefix == "+":
+                    added.add(val)
+                elif prefix == "-":
+                    removed.add(val)
+            # else: other lines inside 'scenarios:' block are ignored
 
     return added, removed
 
