@@ -13,6 +13,10 @@ permissions:
 jobs:
   quarantine-notify:
     name: Notify maintainers for quarantine changes
+    permissions:
+      contents: read
+      issues: write       # required for creating/updating PR comments
+      pull-requests: read
     runs-on: ubuntu-latest
 
     env:
