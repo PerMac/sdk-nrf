@@ -11,7 +11,7 @@
   comment: "native_posix will be removed soon - native_sim platform is the default simulator now"
 
 - scenarios:
-    - sample.matter.light_bulb.aws
+    - sample.matter.light_bulb.*
   platforms:
     - nrf7002dk/nrf5340/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-31774"
@@ -87,6 +87,7 @@
     - sample.bluetooth.mesh.sensor_client
   platforms:
     - nrf52dk/nrf52832
+    - nrf52840dk/nrf52840
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-35409"
 
 - scenarios:
@@ -101,12 +102,6 @@
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54lv10dk@0.2.0/nrf54lv10a/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-35468"
-
-- scenarios:
-    - sample.nrf7002_eb.thingy53.shell
-  platforms:
-    - thingy53/nrf5340/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-35521"
 
 - scenarios:
     - applications.machine_learning.zrelease
