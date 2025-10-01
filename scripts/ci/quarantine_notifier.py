@@ -38,11 +38,10 @@ except Exception:
     print("ERROR: PyYAML is required (pip install pyyaml).", file=sys.stderr)
     raise
 
-
 # ---------- CLI ----------
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Prepare quarantine owners notification comment from a diff (no token).")
+    p = argparse.ArgumentParser(description="Prepare quarantine owners notification comment from a diff (no token).", allow_abbrev=False)
     p.add_argument("--repo-root", default=".", help="Repository root (default: .)")
     p.add_argument("--diff-file", required=True, help="Unified diff file of scripts/quarantine.yaml")
     p.add_argument("--output", default="quarantine_comment.md", help="Output Markdown file with comment body.")
@@ -55,7 +54,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--strict-flag-file", default="strict_missing_codeowners.flag",
                    help="Path to flag file created when strict violation occurs.")
     return p.parse_args()
-
 
 # ---------- Diff parsing (find scenario patterns added/removed) ----------
 
@@ -71,7 +69,8 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
     removed: Set[str] = set()
 
     in_scenarios = False
-    scenarios_indent = None  # indentation (spaces) of the 'scenarios:' key
+    in_platforms = False
+    scenarios_for_platforms = set() # scenarios for the current platform
 
     DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
 
@@ -82,9 +81,6 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
         if ch in "+- ":
             return ch, line[1:]
         return "", line  # shouldn't happen in a standard unified diff
-
-    def leading_spaces(s: str) -> int:
-        return len(s) - len(s.lstrip(" "))
 
     def strip_inline_comment(val: str) -> str:
         # remove trailing " # ..." comment fragments (unquoted)
@@ -103,37 +99,55 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
 
         prefix, body = get_prefix_and_body(raw)
         # DO NOT pre-trim a leading space from body; measure indent as-is
-        indent = leading_spaces(body)
         trimmed = body.lstrip()
+
+        if not trimmed or trimmed.startswith("#"):
+            continue
+        if trimmed.startswith("comment:"):
+            # reset all flags and go to next dictionary item
+            if prefix == "+":
+                added.update(scenarios_for_platforms)
+            elif prefix == "-":
+                removed.update(scenarios_for_platforms)
+
+            in_scenarios = False
+            in_platforms = False
+            scenarios_for_platforms = set()
+            continue
 
         # Enter scenarios block whenever we see a 'scenarios:' key (context, +, or -)
         if re.fullmatch(r"- scenarios:\s*", trimmed):
             in_scenarios = True
-            scenarios_indent = indent
+            in_platforms = False
+            scenarios_for_platforms = set()
             continue
-
-        # Leave scenarios on a new YAML key at same or shallower indent
-        # (allowing letters, digits, underscore, dot, and hyphen in keys)
-        if in_scenarios and re.fullmatch(r"[A-Za-z0-9_.-]+:\s*", trimmed) and indent <= (scenarios_indent or 0):
+        elif re.fullmatch(r"- platforms:\s*", trimmed) or re.fullmatch(r"^platforms:\s*", trimmed):
             in_scenarios = False
-            scenarios_indent = None
+            in_platforms = True
             continue
 
         # Collect list items within scenarios
-        if in_scenarios:
+        if in_scenarios or in_platforms:
             m = re.match(r"^-\s+(.*)$", trimmed)
             if m:
                 val = clean_value(m.group(1))
                 if not val:
                     continue
-                if prefix == "+":
-                    added.add(val)
-                elif prefix == "-":
-                    removed.add(val)
-            # else: other lines inside 'scenarios:' block are ignored
+                if in_scenarios:
+                    if prefix == "+":
+                        added.add(val)
+                    elif prefix == "-":
+                        removed.add(val)
+                    scenarios_for_platforms.add(val)
+                elif in_platforms:
+                    if prefix == "+":
+                        added.update(scenarios_for_platforms)
+                    elif prefix == "-":
+                        removed.update(scenarios_for_platforms)
+                    else:
+                        continue
 
     return added, removed
-
 
 # ---------- Scenario discovery ----------
 
@@ -169,7 +183,6 @@ def discover_scenarios(repo_root: Path) -> Dict[str, Set[str]]:
             except Exception:
                 continue
     return mapping
-
 
 # ---------- CODEOWNERS parsing & matching ----------
 
@@ -225,7 +238,6 @@ def owners_for_path(path: str, rules: List[Tuple[str, List[str]]]) -> List[str]:
             matched = owners  # LAST match wins
     return matched or []
 
-
 # ---------- Pattern expansion ----------
 
 def compile_rx(pattern: str) -> re.Pattern:
@@ -246,7 +258,6 @@ def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> 
                 out.add(name)
                 break
     return out
-
 
 # ---------- Comment formatting ----------
 
@@ -314,7 +325,6 @@ def make_comment(
         lines.append("---")
 
     return "\n".join(lines).strip() + "\n"
-
 
 # ---------- Grouping & audit ----------
 
