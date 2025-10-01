@@ -275,12 +275,12 @@ def make_comment(
 
     lines: List[str] = []
     lines.append(COMMENT_MARKER)
-    lines.append("**Quarantine update – notifying maintainers**\n")
+    lines.append("**Quarantine update – notifying maintainers here**\n")
 
     for key in all_owner_keys:
         owners = [o.strip() for o in key.split(",") if o.strip()]
         owners = [owner + "XYZ" for owner in owners] # avoid real handlers for testing purpose
-        mention = ", ".join(owners) if owners else "_(no owners found)_"
+        mention = " ".join(owners) if owners else "_(no owners found)_"
         lines.append(f"{mention}: Please take a note of quarantine changes for scenarios under your maintainership.")
         add_lines, del_lines = [], []
         for scen, path in sorted(owner_to_added.get(key, [])):
