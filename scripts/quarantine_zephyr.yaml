@@ -578,3 +578,9 @@
 - scenarios:
     - buildsystem.sbom.spdx
   comment: "Missing toolchain python package. https://nordicsemi.atlassian.net/browse/NCSDK-35387"
+
+- scenarios:
+    - arch.common.timing
+  platforms:
+    - nrf54h20dk@0.9.0/nrf54h20/cpuapp
+  comment: "https://github.com/zephyrproject-rtos/zephyr/issues/88163"

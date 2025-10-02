@@ -66,6 +66,7 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
     """
     added: Set[str] = set()
     removed: Set[str] = set()
+    scenarios: Set[str] = set()
 
     in_scenarios = False
     scenarios_indent = None  # indentation (spaces) of the 'scenarios:' key
@@ -106,13 +107,22 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
         # Enter scenarios block whenever we see a 'scenarios:' key (context, +, or -)
         if re.fullmatch(r"- scenarios:\s*", trimmed):
             in_scenarios = True
+            in_platforms = False
+            scenarios_indent = indent
+            scenarios_for_platforms = set()
+            continue
+    
+        if re.fullmatch(r"- platforms:\s*", trimmed):
+            in_scenarios = False
+            in_platforms = True
             scenarios_indent = indent
             continue
 
         # Leave scenarios on a new YAML key at same or shallower indent
         # (allowing letters, digits, underscore, dot, and hyphen in keys)
-        if in_scenarios and re.fullmatch(r"[A-Za-z0-9_.-]+:\s*", trimmed) and indent <= (scenarios_indent or 0):
+        if (in_scenarios or in_platforms) and re.fullmatch(r"[A-Za-z0-9_.-]+:\s*", trimmed) and indent <= (scenarios_indent or 0):
             in_scenarios = False
+            in_platforms = False
             scenarios_indent = None
             continue
 
@@ -123,11 +133,24 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
                 val = clean_value(m.group(1))
                 if not val:
                     continue
+                if in_scenarios:
+                    if prefix == "+":
+                        added.add(val)
+                    elif prefix == "-":
+                        removed.add(val)
+                    else:
+                        scenarios_for_platforms.add(val)
+        
+        if in_platforms:
+            m = re.match(r"^-\s+(.*)$", trimmed)
+            if m or ("- all" in trimmed):
                 if prefix == "+":
-                    added.add(val)
+                    added.update(scenarios_for_platforms)
                 elif prefix == "-":
-                    removed.add(val)
-            # else: other lines inside 'scenarios:' block are ignored
+                    removed.update(scenarios_for_platforms)
+                else:
+                    continue
+                scenarios_for_platforms = set()
 
     return added, removed
 
@@ -354,6 +377,8 @@ def main() -> int:
 
     diff_text = diff_path.read_text(encoding="utf-8", errors="ignore")
     added_patterns, removed_patterns = parse_diff_for_scenarios(diff_text)
+    print(f"Added patterns: {added_patterns}")
+    print(f"Removed patterns: {removed_patterns}")
 
     scenario_map = discover_scenarios(root)
     code_rules = load_codeowners(root)
