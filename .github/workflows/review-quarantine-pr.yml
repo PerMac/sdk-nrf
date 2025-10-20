@@ -103,15 +103,14 @@ jobs:
           fi
 
           BODY="$(cat quarantine_comment.md)"
-          existing_id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments?per_page=100" \
-            --jq '.[] | select(.body | contains("<!-- quarantine-notifier -->")) | .id' | head -n1 || true)
+          existing_id=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("Quarantine update – notifying maintainers")) | .id' || echo "")
 
           if [ -n "$existing_id" ]; then
             echo "Updating existing quarantine notification comment (id=$existing_id)."
             gh api -X PATCH "repos/${REPO}/issues/comments/${existing_id}" -f body="$BODY" > /dev/null
           else
             echo "Creating quarantine notification comment."
-            gh api -X POST "repos/${REPO}/issues/${PR}/comments" -f body="$BODY" > /dev/null
+            gh pr comment "$PR" --body "$BODY" > /dev/null
           fi
 
       - name: Upload audit artifacts
