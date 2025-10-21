@@ -15,7 +15,7 @@ jobs:
     name: Notify maintainers for quarantine changes
     permissions:
       issues: write       # required for creating/updating PR comments
-      contents: write
+      contents: read
       pull-requests: write
     runs-on: ubuntu-latest
 
