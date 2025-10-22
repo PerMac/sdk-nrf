@@ -12,6 +12,7 @@
 
 - scenarios:
     - sample.matter.light_bulb.aws
+    - sample.matter.light_bulb.debug
   platforms:
     - nrf7002dk/nrf5340/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-31774"
@@ -27,7 +28,6 @@
   platforms:
     - nrf7002dk/nrf5340/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/KRKNWK-20715"
-
 
 - scenarios:
     - nrf.extended.drivers.uart.uart_elementary_dual_l09
@@ -71,7 +71,7 @@
   comment: "Needs alignment to work with IronSide SE"
 
 - scenarios:
-    - drivers.counter.basic_api
+    - drivers.counter.*
   platforms:
     - nrf54h20dk@0.9.0/nrf54h20/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-34187"
@@ -95,6 +95,7 @@
     - nrf52dk/nrf52832
     - nrf52833dk/nrf52833
     - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp
     - nrf54l15dk/nrf54l05/cpuapp
     - nrf54l15dk/nrf54l10/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp

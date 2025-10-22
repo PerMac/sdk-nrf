@@ -1313,6 +1313,7 @@
     - bootloader.bl_storage
   platforms:
     - nrf5340dk/nrf5340/cpuapp
+    - nrf5340dk/nrf5340/cpuapp/ns
   comment: "Configurations excluded to limit resources usage in integration builds"
 
 - scenarios:
@@ -1323,6 +1324,7 @@
 
 - scenarios:
     - applications.machine_learning.zdebug_rtt
+    - applications.machine_learning.zdebug_nus
   platforms:
     - thingy53/nrf5340/cpuapp
   comment: "Configurations excluded to limit resources usage in integration builds"
