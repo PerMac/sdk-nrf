@@ -21,6 +21,7 @@
     - sample.matter.contact_sensor.release
   platforms:
     - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp
   comment: "Configurations excluded to limit resources usage in integration builds"
 
 - scenarios:
@@ -142,7 +143,7 @@
 
 - scenarios:
     - sample.bluetooth.mesh.light
-    - sample.bluetooth.mesh.light_dimmer
+    - sample.bluetooth.mesh.*
   platforms:
     - nrf21540dk/nrf52840
     - nrf52833dk/nrf52833
