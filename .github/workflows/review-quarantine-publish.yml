@@ -8,9 +8,9 @@ on:
 
 permissions:
   actions: read
-  contents: read
-  issues: write
+  contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   publish-comment:
@@ -36,9 +36,8 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: ./quarantine-artifacts
 
-      - name: Read PR number from artifact (sanitized)
-        id: pr_num
-        shell: bash
+      - name: Read PR number from artifact
+        id: pr
         run: |
           set -euo pipefail
           PR_FILE="$(find ./quarantine-artifacts -type f -name 'pr_number.txt' -print -quit)"
@@ -47,53 +46,69 @@ jobs:
             exit 1
           fi
 
-          # Read first line and strip CR/LF
           PR_NUMBER="$(head -n1 -- "$PR_FILE" | tr -d '\r\n')"
 
-          # Strict validation: PR number must be decimal digits only
           if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
             echo "ERROR: Invalid PR number: '$PR_NUMBER'" >&2
             exit 1
           fi
 
-          # Expose as a step output (safer than $GITHUB_ENV here)
           printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
-      - name: Check for comment content
-        id: has_comment
-        shell: bash
+      - name: Find generated comment file
+        id: comment
         run: |
           set -euo pipefail
-          # Find the comment file
           COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
           if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
-            echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
+            printf 'comment_file=%s\n' "$COMMENT_FILE" >> "$GITHUB_OUTPUT"
           else
             echo "ERROR: Quarantine comment not found or empty." >&2
             exit 1
           fi
 
-      - name: Post or update PR comment
+      - name: Create or update quarantine notification comment
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ env.REPO }}
-          PR_NUMBER: ${{ steps.pr_num.outputs.pr_number }}
-        shell: bash
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          COMMENT_FILE: ${{ steps.comment.outputs.comment_file }}
         run: |
           set -euo pipefail
-          BODY="$(cat "${{ steps.has_comment.outputs.comment_file }}")"
 
-          # Try to find an existing quarantine-notification comment to update
+          MARKER='<!-- quarantine-comment -->'
+          BODY="$(cat "$COMMENT_FILE")"
+
+          if [[ "$BODY" != *"$MARKER"* ]]; then
+            BODY="$MARKER"$'\n'"$BODY"
+          fi
+
           existing_id="$(
-            gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-              --jq '.comments[] | select(.body | contains("Quarantine update – notifying maintainers")) | .id' \
-              || true
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --paginate \
+              --jq '.[] | select(.body | contains("'"$MARKER"'")) | .id' \
+              | tail -n1
           )"
 
-          if [[ -n "$existing_id" ]]; then
+          payload="$(mktemp)"
+          jq -n --arg body "$BODY" '{body: $body}' > "$payload"
+
+          if [[ -n "${existing_id:-}" ]]; then
             echo "Updating existing quarantine notification comment (id=$existing_id)."
-            gh api -X PATCH "repos/$REPO/issues/comments/$existing_id" -f body="$BODY" >/dev/null
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/comments/$existing_id" \
+              --input "$payload" \
+              >/dev/null
           else
             echo "Creating quarantine notification comment."
-            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --input "$payload" \
+              >/dev/null
           fi
