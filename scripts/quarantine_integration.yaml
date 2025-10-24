@@ -21,6 +21,7 @@
     - sample.matter.contact_sensor.release
   platforms:
     - nrf52840dk/nrf52840
+    - nrf5340dk/nrf5340/cpuapp/ns
   comment: "Configurations excluded to limit resources usage in integration builds"
 
 - scenarios:

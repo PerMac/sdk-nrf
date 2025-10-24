@@ -11,7 +11,7 @@
   comment: "native_posix will be removed soon - native_sim platform is the default simulator now"
 
 - scenarios:
-    - sample.matter.light_bulb.aws
+    - sample.matter.light_bulb.*
   platforms:
     - nrf7002dk/nrf5340/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-31774"
