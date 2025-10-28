@@ -93,8 +93,8 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t QFILES < <(printf '%s\n' "$QUARANTINE_FILES" | sed '/^\s*$/d')
-          git diff -U100 "$BASE_SHA" pr_head -- "${QFILES[@]}" > diff_quarantine.txt
-          head -n 100 diff_quarantine.txt || true
+          git diff -U100 "$BASE_SHA" pr_head -- "${QFILES[@]}" > "$RUNNER_TEMP/diff_quarantine.txt"
+          head -n 100 "$RUNNER_TEMP/diff_quarantine.txt" || true
 
       - name: Checkout current repository (safe)
         uses: actions/checkout@v4
@@ -116,7 +116,7 @@ jobs:
           set -euo pipefail
           python3 scripts/ci/quarantine_notifier.py \
             --repo-root . \
-            --diff-file diff_quarantine.txt \
+            --diff-file "$RUNNER_TEMP/diff_quarantine.txt" \
             --output quarantine_comment.md \
             --audit-json quarantine_audit.json \
             --inventory-json scenario_inventory.json \
