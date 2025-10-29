@@ -95,7 +95,7 @@ jobs:
           BODY="$(cat "${{ steps.has_comment.outputs.comment_file }}")"
 
           # Try to find an existing quarantine-notification comment to update
-          existing_id="$(gh pr view "$PR_NUMBER" --json comments --jq '.comments[] 
+          existing_id="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments --jq '.comments[]
             | select(.body | contains("Quarantine update – notifying maintainers")) 
             | .id' || echo "")"
 
@@ -104,7 +104,7 @@ jobs:
             gh api -X PATCH "repos/$REPO/issues/comments/$existing_id" -f body="$BODY" >/dev/null
           else
             echo "Creating quarantine notification comment."
-            gh pr comment "$PR_NUMBER" --body "$BODY" >/dev/null
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null
           fi
 
       - name: Upload audit artifacts (mirror)
