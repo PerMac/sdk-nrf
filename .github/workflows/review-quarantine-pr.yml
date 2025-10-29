@@ -38,6 +38,39 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: ./quarantine-artifacts
 
+      - name: Read PR number from artifact (fork-safe)
+        id: read_pr
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find the first pr_number.txt among all artifact subfolders
+          PR_FILE="$(find ./quarantine-artifacts -type f -name 'pr_number.txt' | head -n1 || true)"
+          if [[ -z "${PR_FILE}" ]]; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "No pr_number.txt found in artifacts" >&2
+          else
+            PR_NUM="$(head -n1 "${PR_FILE}" | tr -d '\r')"
+            echo "pr_number=${PR_NUM}" >> "$GITHUB_OUTPUT"
+            echo "PR number recovered from artifact: ${PR_NUM}"
+          fi
+
+      - name: Export PR_NUMBER to env (retain original if present)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Prefer the workflow_run-provided PR number if present; otherwise use artifact value
+          CURRENT="${PR_NUMBER:-}"
+          FROM_ART="${{ steps.read_pr.outputs.pr_number }}"
+          if [[ -z "${CURRENT}" ]]; then
+            if [[ -z "${FROM_ART}" ]]; then
+              echo "ERROR: PR number is not available (workflow_run payload empty and pr_number.txt missing)." >&2
+              exit 1
+            fi
+            echo "PR_NUMBER=${FROM_ART}" >> "$GITHUB_ENV"
+          else
+            echo "PR_NUMBER=${CURRENT}" >> "$GITHUB_ENV"
+          fi
+
       - name: Check for comment content
         id: has_comment
         shell: bash
