@@ -15,8 +15,6 @@ jobs:
   publish-comment:
     name: Publish quarantine comment to PR (only after Generate succeeds)
     runs-on: ubuntu-24.04
-
-    # Run only when the upstream workflow SUCCEEDED
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
@@ -35,6 +33,7 @@ jobs:
       - name: Download generated artifacts from the triggering run
         uses: actions/download-artifact@v4
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           # Download artifacts from the exact run that triggered this workflow
           run-id: ${{ github.event.workflow_run.id }}
           path: ./quarantine-artifacts
