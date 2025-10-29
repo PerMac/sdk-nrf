@@ -124,6 +124,13 @@ jobs:
             --strict-missing-codeowners \
             --strict-flag-file strict_missing_codeowners.flag
 
+      - name: Store PR number for Publish (as artifact file)
+        if: steps.changed.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${{ github.event.pull_request.number }}" > pr_number.txt
+
       - name: Upload artifacts for publish workflow
         if: steps.changed.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
@@ -135,6 +142,7 @@ jobs:
             quarantine_audit.json
             scenario_inventory.json
             strict_missing_codeowners.flag
+            pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
 
