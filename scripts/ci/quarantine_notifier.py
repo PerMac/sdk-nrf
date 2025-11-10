@@ -7,10 +7,10 @@
 Token-free quarantine notifier (diff-driven) with strict mode + audit JSON.
 
 INPUTS:
-  --diff-file diff_quarantine.txt        # unified diff of scripts/quarantine.yaml (with context, e.g., -U100)
+  --diff-file diff_quarantine.txt        # file with diff (with context, e.g., -U100)
   --repo-root .                          # repo root for scanning YAML tests and CODEOWNERS
   --ref <sha>                            # head sha for blob URLs in the comment
-  --strict-missing-codeowners            # if set, mark violation when any affected scenario lacks owners
+  --strict-missing-codeowners            # mark violation when any affected scenario lacks owners
   --strict-flag-file strict_missing_codeowners.flag
   --audit-json quarantine_audit.json     # JSON summary output (owners, scenarios, etc.)
   --inventory-json scenario_inventory.json  # JSON map: scenario -> [yaml_paths]
@@ -29,8 +29,8 @@ import json
 import os
 import re
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 try:
     import yaml  # PyYAML
@@ -41,32 +41,62 @@ except Exception:
 # ---------- CLI ----------
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Prepare quarantine owners notification comment from a diff (no token).", allow_abbrev=False)
+    p = argparse.ArgumentParser(
+        description=(
+            "Prepare quarantine owners notification comment from a diff."
+        ),
+        allow_abbrev=False,
+    )
     p.add_argument("--repo-root", default=".", help="Repository root (default: .)")
-    p.add_argument("--diff-file", required=True, help="Unified diff file of scripts/quarantine.yaml")
-    p.add_argument("--output", default="quarantine_comment.md", help="Output Markdown file with comment body.")
-    p.add_argument("--audit-json", default="quarantine_audit.json", help="Audit summary JSON output path.")
-    p.add_argument("--inventory-json", default="scenario_inventory.json", help="Scenario inventory JSON output path.")
-    p.add_argument("--ref", default=os.environ.get("GITHUB_SHA", "main"),
-                   help="Git ref/sha used for blob links in comment (default: env GITHUB_SHA or 'main').")
-    p.add_argument("--strict-missing-codeowners", action="store_true",
-                   help="If any affected scenario has no CODEOWNERS, mark strict violation.")
-    p.add_argument("--strict-flag-file", default="strict_missing_codeowners.flag",
-                   help="Path to flag file created when strict violation occurs.")
+    p.add_argument(
+        "--diff-file",
+        required=True,
+        help="Unified diff file of scripts/quarantine.yaml",
+    )
+    p.add_argument(
+        "--output",
+        default="quarantine_comment.md",
+        help="Output Markdown file with comment body."
+    )
+    p.add_argument(
+        "--audit-json",
+        default="quarantine_audit.json",
+        help="Audit summary JSON output path."
+        )
+    p.add_argument(
+        "--inventory-json",
+        default="scenario_inventory.json",
+        help="Scenario inventory JSON output path."
+        )
+    p.add_argument(
+        "--ref",
+        default=os.environ.get("GITHUB_SHA", "main"),
+        help="Git ref/sha used for blob links in comment (default: env GITHUB_SHA or 'main')."
+    )
+    p.add_argument(
+        "--strict-missing-codeowners",
+        action="store_true",
+        help="If any affected scenario has no CODEOWNERS, mark strict violation."
+        )
+    p.add_argument(
+        "--strict-flag-file",
+        default="strict_missing_codeowners.flag",
+        help="Path to flag file created when strict violation occurs."
+        )
     return p.parse_args()
 
 # ---------- Diff parsing (find scenario patterns added/removed) ----------
 
 DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
 
-def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
+def parse_diff_for_scenarios(diff_text: str) -> tuple[set[str], set[str]]:
     """
     Parse unified diff (with context, e.g. -U100) and extract values
     added/removed under 'scenarios:' YAML keys.
     Returns: (added_patterns, removed_patterns)
     """
-    added: Set[str] = set()
-    removed: Set[str] = set()
+    added: set[str] = set()
+    removed: set[str] = set()
 
     in_scenarios = False
     in_platforms = False
@@ -74,7 +104,7 @@ def parse_diff_for_scenarios(diff_text: str) -> Tuple[Set[str], Set[str]]:
 
     DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
 
-    def get_prefix_and_body(line: str) -> Tuple[str, str]:
+    def get_prefix_and_body(line: str) -> tuple[str, str]:
         if not line:
             return "", ""
         ch = line[0]
@@ -160,12 +190,12 @@ SCENARIO_YAML_GLOBS = [
     "tests/**/sample.yaml",
 ]
 
-def discover_scenarios(repo_root: Path) -> Dict[str, Set[str]]:
+def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
     """
     Map: scenario_name -> set(yaml_paths_defining_it)
     Keys in top-level 'tests:' mapping of each YAML are Twister scenario names.
     """
-    mapping: Dict[str, Set[str]] = {}
+    mapping: dict[str, set[str]] = {}
     for pattern in SCENARIO_YAML_GLOBS:
         for p in repo_root.glob(pattern):
             if not p.is_file():
@@ -174,7 +204,7 @@ def discover_scenarios(repo_root: Path) -> Dict[str, Set[str]]:
                 data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
                 tests = data.get("tests", {})
                 if isinstance(tests, dict):
-                    for scenario in tests.keys():
+                    for scenario in tests:
                         s = str(scenario).strip()
                         if s:
                             rel = p.resolve().relative_to(repo_root.resolve()).as_posix()
@@ -189,11 +219,11 @@ def discover_scenarios(repo_root: Path) -> Dict[str, Set[str]]:
 CODEOWNERS_PATH = "CODEOWNERS"
 CODEOWNER_LINE_RE = re.compile(r"^\s*([^\s#][^\s]*)\s+(.+?)\s*$")
 
-def load_codeowners(repo_root: Path) -> List[Tuple[str, List[str]]]:
+def load_codeowners(repo_root: Path) -> list[tuple[str, list[str]]]:
     path = repo_root / CODEOWNERS_PATH
     if not path.exists():
         return []
-    rules: List[Tuple[str, List[str]]] = []
+    rules: list[tuple[str, list[str]]] = []
     for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
         s = line.strip()
         if not s or s.startswith("#"):
@@ -231,8 +261,8 @@ def codeowners_pattern_to_regex(pattern: str) -> re.Pattern:
         return re.compile(r"(^|.*/)" + pat + r"($|/.*)")
 
 
-def owners_for_path(path: str, rules: List[Tuple[str, List[str]]]) -> List[str]:
-    matched: Optional[List[str]] = None
+def owners_for_path(path: str, rules: list[tuple[str, list[str]]]) -> list[str]:
+    matched: list[str] | None = None
     for pat, owners in rules:
         if codeowners_pattern_to_regex(pat).search(path):
             matched = owners  # LAST match wins
@@ -244,9 +274,9 @@ def compile_rx(pattern: str) -> re.Pattern:
     return re.compile(pattern + r"\Z")  # full-match semantics
 
 
-def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> Set[str]:
-    out: Set[str] = set()
-    compiled: List[Tuple[str, re.Pattern]] = []
+def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> set[str]:
+    out: set[str] = set()
+    compiled: list[tuple[str, re.Pattern]] = []
     for p in patterns:
         try:
             compiled.append((p, compile_rx(p)))
@@ -264,14 +294,16 @@ def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> 
 COMMENT_MARKER = "<!-- quarantine-notifier -->"
 
 def make_comment(
-    owner_to_added: Dict[str, List[Tuple[str, str]]],
-    owner_to_removed: Dict[str, List[Tuple[str, str]]],
-    unowned_added: List[Tuple[str, str]],
-    unowned_removed: List[Tuple[str, str]],
-    repo_full: Optional[str],
+    owner_to_added: dict[str, list[tuple[str, str]]],
+    owner_to_removed: dict[str, list[tuple[str, str]]],
+    unowned_added: list[tuple[str, str]],
+    unowned_removed: list[tuple[str, str]],
+    repo_full: None | str,
     strict: bool,
 ) -> str:
-    all_owner_keys = sorted(set(owner_to_added.keys()) | set(owner_to_removed.keys()), key=str.lower)
+    all_owner_keys = sorted(
+        set(owner_to_added.keys()) | set(owner_to_removed.keys()), key=str.lower
+        )
     any_owned = bool(all_owner_keys)
     any_unowned = bool(unowned_added or unowned_removed)
     if not any_owned and not any_unowned:
@@ -280,20 +312,24 @@ def make_comment(
     def link(path: str) -> str:
         return f"{path}" if repo_full else path
 
-    def section(title: str, items: List[str], lines: List[str]):
+    def section(title: str, items: list[str], lines: list[str]):
         if items:
             lines.append(f"### {title}")
             lines.extend(items)
             lines.append("")
 
-    lines: List[str] = []
+    lines: list[str] = []
     lines.append(COMMENT_MARKER)
     lines.append("**Quarantine update – notifying maintainers**\n")
 
     for key in all_owner_keys:
         owners = [o.strip() for o in key.split(",") if o.strip()]
         mention = ", ".join(owners) if owners else "_(no owners found)_"
-        lines.append(f"{mention}: Please take a note of quarantine changes for scenarios under your maintainership.")
+        mention = mention if mention else "_(no owners found)_"
+        lines.append(
+            f"{mention}: Please take a note of quarantine changes for scenarios "
+            f"under your maintainership."
+        )
         add_lines, del_lines = [], []
         for scen, path in sorted(owner_to_added.get(key, [])):
             add_lines.append(f"- **Added to quarantine**: `{scen}` (defined in {link(path)})")
@@ -320,7 +356,10 @@ def make_comment(
                 lines.append(f"- `{scen}` (defined in {link(path)})")
         if strict:
             lines.append("")
-            lines.append("> **Action required:** Please add appropriate CODEOWNERS entries for the paths above. This PR check will fail due to strict mode.")
+            lines.append(
+                "> **Action required:** Please add appropriate CODEOWNERS entries "
+                "for the paths above. This PR check will fail due to strict mode."
+            )
         lines.append("---")
 
     return "\n".join(lines).strip() + "\n"
@@ -328,12 +367,12 @@ def make_comment(
 # ---------- Grouping & audit ----------
 
 def group_and_collect_unowned(
-    scenario_to_paths: Dict[str, Set[str]],
+    scenario_to_paths: dict[str, set[str]],
     patterns: Iterable[str],
-    codeowners_rules: List[Tuple[str, List[str]]]
-) -> Tuple[Dict[str, List[Tuple[str, str]]], List[Tuple[str, str]], Set[str]]:
-    owners_map: Dict[str, List[Tuple[str, str]]] = {}
-    unowned: List[Tuple[str, str]] = []
+    codeowners_rules: list[tuple[str, list[str]]]
+) -> tuple[dict[str, list[tuple[str, str]]], list[tuple[str, str]], set[str]]:
+    owners_map: dict[str, list[tuple[str, str]]] = {}
+    unowned: list[tuple[str, str]] = []
     expanded = expand_patterns(patterns, scenario_to_paths.keys())
     for scen in expanded:
         for p in scenario_to_paths.get(scen, set()):
@@ -369,8 +408,12 @@ def main() -> int:
     scenario_map = discover_scenarios(root)
     code_rules = load_codeowners(root)
 
-    owned_add, unowned_add, expanded_add = group_and_collect_unowned(scenario_map, sorted(added_patterns), code_rules)
-    owned_del, unowned_del, expanded_del = group_and_collect_unowned(scenario_map, sorted(removed_patterns), code_rules)
+    owned_add, unowned_add, expanded_add = group_and_collect_unowned(
+        scenario_map, sorted(added_patterns), code_rules
+    )
+    owned_del, unowned_del, expanded_del = group_and_collect_unowned(
+        scenario_map, sorted(removed_patterns), code_rules
+    )
 
     body = make_comment(
         owner_to_added=owned_add,
@@ -398,14 +441,24 @@ def main() -> int:
         },
         "owners": {
             key: {
-                "added": [{"scenario": s, "path": p} for (s, p) in sorted(owned_add.get(key, []))],
-                "removed": [{"scenario": s, "path": p} for (s, p) in sorted(owned_del.get(key, []))],
+                "added": [
+                    {"scenario": s, "path": p} for (s, p) in sorted(owned_add.get(key, []))
+                ],
+                "removed": [
+                    {"scenario": s, "path": p} for (s, p) in sorted(owned_del.get(key, []))
+                ],
             }
-            for key in sorted(set(owned_add.keys()) | set(owned_del.keys()), key=str.lower)
+            for key in sorted(
+                set(owned_add.keys()) | set(owned_del.keys()), key=str.lower
+            )
         },
         "unowned": {
-            "added": [{"scenario": s, "path": p} for (s, p) in sorted(unowned_add)],
-            "removed": [{"scenario": s, "path": p} for (s, p) in sorted(unowned_del)],
+            "added": [
+                {"scenario": s, "path": p} for (s, p) in sorted(unowned_add)
+            ],
+            "removed": [
+                {"scenario": s, "path": p} for (s, p) in sorted(unowned_del)
+            ],
         },
         "stats": {
             "patterns_added": len(added_patterns),
@@ -418,13 +471,17 @@ def main() -> int:
         "strict_mode": bool(args.strict_missing_codeowners),
         "strict_violation": False,
     }
-    strict_violation = args.strict_missing_codeowners and (len(unowned_add) > 0 or len(unowned_del) > 0)
+    strict_violation = (
+        args.strict_missing_codeowners and (len(unowned_add) > 0 or len(unowned_del) > 0)
+    )
     if strict_violation:
         Path(args.strict_flag_file).write_text(
             "Missing CODEOWNERS detected for affected scenarios.\n", encoding="utf-8"
         )
         audit["strict_violation"] = True
-        print("Strict mode violation: missing CODEOWNERS found. Flag file created.", file=sys.stderr)
+        print(
+            "Strict mode violation: missing CODEOWNERS found. Flag file created.", file=sys.stderr
+        )
 
     write_json(Path(args.audit_json), audit)
 
