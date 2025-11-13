@@ -97,7 +97,7 @@ jobs:
             base/quarantine_audit.json
             base/scenario_inventory.json
             base/strict_missing_codeowners.flag
-            pr/pr_number.txt
+            pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
 
