@@ -21,7 +21,6 @@ jobs:
     env:
       # Use workflow_run payload
       REPO: ${{ github.repository }}
-      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
 
     steps:
@@ -33,22 +32,34 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: ./quarantine-artifacts
 
+      - name: Read PR number from artifact
+        id: pr_num
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_FILE="$(find ./quarantine-artifacts/pr -name 'pr_number.txt' -print -quit)"
+          if [[ -z "${PR_FILE}" || ! -s "${PR_FILE}" ]]; then
+            echo "ERROR: pr_number.txt not found or empty." >&2
+            exit 1
+          fi
+          PR_NUMBER="$(head -n1 "${PR_FILE}" | tr -d '\r')"
+          echo "PR_NUMBER=${PR_NUMBER}" >> "$GITHUB_ENV"
+
       - name: Check for comment content
         id: has_comment
         shell: bash
         run: |
           set -euo pipefail
-          # Find the file regardless of exact artifact name
+          # Find the comment file
           COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
           if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
             echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
           else
-            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "ERROR: Quarantine comment not found or empty." >&2
+            exit 1
           fi
 
       - name: Post or update PR comment
-        if: steps.has_comment.outputs.present == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
@@ -68,17 +79,3 @@ jobs:
             echo "Creating quarantine notification comment."
             gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null
           fi
-
-      - name: Upload audit artifacts (mirror)
-        if: steps.has_comment.outputs.present == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: quarantine-audit-pr${{ env.PR_NUMBER }}-run${{ github.run_id }}
-          path: |
-            ./quarantine-artifacts/**/diff_quarantine.txt
-            ./quarantine-artifacts/**/quarantine_comment.md
-            ./quarantine-artifacts/**/quarantine_audit.json
-            ./quarantine-artifacts/**/scenario_inventory.json
-            ./quarantine-artifacts/**/strict_missing_codeowners.flag
-          if-no-files-found: ignore
-          retention-days: 30

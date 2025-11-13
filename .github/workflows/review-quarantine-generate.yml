@@ -79,6 +79,14 @@ jobs:
             --strict-missing-codeowners \
             --strict-flag-file strict_missing_codeowners.flag
 
+      # PR number is not accessible between workflows in a fork and a base context
+      - name: Store PR number for Publish (as artifact file)
+        shell: bash
+        path: pr
+        run: |
+          set -euo pipefail
+          echo "${{ github.event.pull_request.number }}" > pr_number.txt
+
       # Upload artifacts for the publish workflow (includes PR number)
       - name: Upload artifacts for publish workflow
         uses: actions/upload-artifact@v4
@@ -90,7 +98,7 @@ jobs:
             base/quarantine_audit.json
             base/scenario_inventory.json
             base/strict_missing_codeowners.flag
-            pr_number.txt
+            pr/pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
 
