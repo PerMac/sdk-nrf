@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PR_FILE="$(find ./quarantine-artifacts/pr -name 'pr_number.txt' -print -quit)"
+          PR_FILE="$(find ./quarantine-artifacts -name 'pr_number.txt' -print -quit)"
           if [[ -z "${PR_FILE}" || ! -s "${PR_FILE}" ]]; then
             echo "ERROR: pr_number.txt not found or empty." >&2
             exit 1

@@ -82,7 +82,6 @@ jobs:
       # PR number is not accessible between workflows in a fork and a base context
       - name: Store PR number for Publish (as artifact file)
         shell: bash
-        path: pr
         run: |
           set -euo pipefail
           echo "${{ github.event.pull_request.number }}" > pr_number.txt
