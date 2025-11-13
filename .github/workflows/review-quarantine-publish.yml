@@ -76,15 +76,19 @@ jobs:
       - name: Post or update PR comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ env.REPO }}
+          PR_NUMBER: ${{ steps.pr_num.outputs.pr_number }}
         shell: bash
         run: |
           set -euo pipefail
           BODY="$(cat "${{ steps.has_comment.outputs.comment_file }}")"
 
           # Try to find an existing quarantine-notification comment to update
-          existing_id="$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments --jq '.comments[]
-            | select(.body | contains("Quarantine update – notifying maintainers"))
-            | .id' || echo "")"
+          existing_id="$(
+            gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+              --jq '.comments[] | select(.body | contains("Quarantine update – notifying maintainers")) | .id' \
+              || true
+          )"
 
           if [[ -n "$existing_id" ]]; then
             echo "Updating existing quarantine notification comment (id=$existing_id)."
