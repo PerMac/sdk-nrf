@@ -14,7 +14,7 @@ from jinja2 import Template
 # ----------------------------- CLI ---------------------------------
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Generate HTML report with pie charts and a folder tree from a CSV report."
+        description="Generate HTML report with pie chart + interactive folder tree."
     )
     p.add_argument("csv", help="Path to the CSV report (columns: path, partitions_present)")
     p.add_argument("-o", "--output", default="report.html", help="Output HTML file name")
@@ -23,14 +23,12 @@ def parse_args():
 
 # --------------------------- Helpers --------------------------------
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Trim whitespace and normalize column names for robustness."""
     df = df.copy()
     df.columns = [c.strip() for c in df.columns]
     return df
 
 
 def coerce_to_bool(series: pd.Series) -> pd.Series:
-    """Coerce a column of strings/ints/bools into clean Python booleans."""
     truthy = {"true", "1", "yes", "y", "t"}
     falsy = {"false", "0", "no", "n", "f"}
 
@@ -44,37 +42,17 @@ def coerce_to_bool(series: pd.Series) -> pd.Series:
             return True
         if s in falsy:
             return False
-        # Default fallback: anything non-empty not recognized becomes False
-        # (safer for your use-case; adjust if needed)
         return False
 
     return series.apply(_to_bool)
 
 
-def extract_platform_from_path(path: str, preferred_root: str = "twister-out") -> str:
-    """Extract platform as the folder immediately after preferred_root. Fallbacks included."""
-    parts = path.strip("/").split("/")
-    if not parts:
-        return "(unknown)"
-
-    # Preferred pattern: ".../twister-out/<platform>/..."
-    if preferred_root in parts:
-        idx = parts.index(preferred_root)
-        if idx + 1 < len(parts):
-            return parts[idx + 1]
-        return "(unknown)"
-
-    # Fallback: use the first segment as "platform"
-    return parts[0]
-
-
 # ------------------------ Tree construction -------------------------
-def new_node() -> Dict[str, Any]:
-    return {"children": {}, "partitions": []}  # partitions: list[bool] only at leaves
+def new_node():
+    return {"children": {}, "partitions": []}
 
 
-def insert_path(root_node: Dict[str, Any], parts: List[str], has_partition: bool):
-    """Insert a path into the tree and record the leaf partition flag."""
+def insert_path(root_node, parts, has_partition):
     node = root_node
     for p in parts:
         if p not in node["children"]:
@@ -83,15 +61,7 @@ def insert_path(root_node: Dict[str, Any], parts: List[str], has_partition: bool
     node["partitions"].append(has_partition)
 
 
-def aggregate_color(node: Dict[str, Any]) -> Tuple[int, int, str]:
-    """
-    Recursively aggregate counts and determine node color.
-    Returns (true_count, total_count, color)
-      - green  : all true
-      - red    : all false
-      - orange : mixed
-      - grey   : no data
-    """
+def aggregate_color(node):
     true_count = sum(1 for v in node["partitions"] if v)
     total_count = len(node["partitions"])
 
@@ -103,27 +73,29 @@ def aggregate_color(node: Dict[str, Any]) -> Tuple[int, int, str]:
     if total_count == 0:
         color = "grey"
     elif true_count == 0:
-        color = "red"
+        color = "green"   # good
     elif true_count == total_count:
-        color = "green"
+        color = "red"     # bad
     else:
-        color = "orange"
+        color = "orange"  # mixed
 
     node["_agg"] = {"true": true_count, "total": total_count, "color": color}
     return true_count, total_count, color
 
 
-def convert_for_js(name: str, node: Dict[str, Any]) -> Dict[str, Any]:
+def convert_for_js(name, node):
     agg = node.get("_agg", {"true": 0, "total": 0, "color": "grey"})
     t = agg["true"]
     n = agg["total"]
-    pct = 0 if n == 0 else round((t / n) * 100)
+    resolved = n - t
+    pct = 0 if n == 0 else round((resolved / n) * 100)
 
     return {
         "name": name,
         "color": agg["color"],
         "true": t,
         "total": n,
+        "resolved": resolved,
         "pct": pct,
         "children": [
             convert_for_js(child_name, child_node)
@@ -132,184 +104,213 @@ def convert_for_js(name: str, node: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-# --------------------------- Charts ---------------------------------
-def overall_pie(has_partition_series: pd.Series) -> str:
-    """Return HTML snippet for the overall pie chart (with Plotly JS embedded)."""
-    true_count = int(has_partition_series.sum())
-    false_count = int((~has_partition_series).sum())
+# --------------------------- Pie Chart -------------------------------
+def overall_pie(series):
     df_counts = pd.DataFrame(
-        {"status": ["Has partition", "No partition"], "count": [true_count, false_count]}
+        {
+            "status": ["Has partition", "No partition"],
+            "count": [int(series.sum()), int((~series).sum())],
+        }
     )
     fig = px.pie(
         df_counts,
         names="status",
         values="count",
         color="status",
-        color_discrete_map={"Has partition": "green", "No partition": "red"},
-        title="Overall Partition Presence",
+        color_discrete_map={"Has partition": "#c62828", "No partition": "#2e7d32"},
+        title="Overall Partition Status (Red = still present, Green = removed)",
     )
-    # Embed Plotly JS once for fully offline viewing:
     return fig.to_html(include_plotlyjs=True, full_html=False)
-
-
-def platform_pies(df: pd.DataFrame) -> List[Tuple[str, str]]:
-    """Return list of (platform, html_snippet) for each platform pie chart."""
-    results = []
-    for platform, grp in df.groupby("platform", sort=True):
-        true_count = int(grp["has_partition"].sum())
-        false_count = int((~grp["has_partition"]).sum())
-        pdf = pd.DataFrame(
-            {
-                "status": ["Has partition", "No partition"],
-                "count": [true_count, false_count],
-            }
-        )
-        fig = px.pie(
-            pdf,
-            names="status",
-            values="count",
-            color="status",
-            color_discrete_map={"Has partition": "green", "No partition": "red"},
-            title=f"Platform: {platform}",
-        )
-        # No need to re-embed plotly (already included by overall pie):
-        results.append((platform, fig.to_html(include_plotlyjs=False, full_html=False)))
-    return results
 
 
 # --------------------------- Template -------------------------------
 HTML_TEMPLATE = Template(
-    r"""<!DOCTYPE html>
+r"""<!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Partition Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1 { margin-bottom: 0.2rem; }
-        .meta { color: #666; margin-bottom: 1.5rem; }
+<meta charset="utf-8">
+<title>Partition Removal Report</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-        h2 { margin-top: 2rem; }
+<style>
+    :root{
+        --bg:#0b0d10;
+        --panel:#151a21;
+        --text:#e6e8ea;
+        --muted:#a0a8b2;
+        --border:#20262e;
+        --green:#2e7d32;
+        --red:#c62828;
+        --orange:#ef6c00;
+        --grey:#757575;
+    }
+    body{
+        margin:0; padding:0;
+        font-family: sans-serif;
+        background:var(--bg); color:var(--text);
+    }
+    .content{
+        max-width:1100px; margin:26px auto; padding:0 16px;
+        display:flex; flex-direction:column; gap:26px;
+    }
+    .card{
+        background:var(--panel);
+        padding:18px 20px;
+        border-radius:14px;
+        border:1px solid var(--border);
+        box-shadow:0 6px 18px rgba(0,0,0,0.25);
+    }
+    h2{ margin:0 0 10px 0; font-size:20px; }
+    .muted{ color:var(--muted); }
 
-        /* Tree styles */
-        .tree-node { cursor: pointer; user-select: none; }
-        .green  { color: #2e7d32; font-weight: 600; }
-        .red    { color: #c62828; font-weight: 600; }
-        .orange { color: #ef6c00; font-weight: 600; }
-        .grey   { color: #757575; }
+    /* Tree */
+    .tree-controls{
+        display:flex; gap:8px; align-items:center; margin-bottom:10px;
+        flex-wrap:wrap;
+    }
+    .btn{
+        padding:6px 12px; border-radius:8px;
+        background:transparent; border:1px solid var(--border);
+        color:var(--text); cursor:pointer;
+    }
+    .btn:hover{ background:rgba(255,255,255,0.05); }
 
-        .children { display: none; margin-left: 18px; padding-left: 10px; border-left: 1px dashed #ccc; }
-        .node-line { margin: 4px 0; }
+    .tree-search{
+        padding:6px 10px; border-radius:8px;
+        border:1px solid var(--border);
+        background:transparent; color:var(--text);
+        width:240px;
+    }
 
-        .controls { margin: 8px 0 16px 0; }
-        .btn { padding: 6px 10px; margin-right: 8px; border: 1px solid #bbb; border-radius: 4px; background:#f7f7f7; cursor:pointer; }
-        .btn:hover { background:#eee; }
-        .progress-container {
-            display: inline-block;
-            width: 80px;
-            height: 10px;
-            background: #ddd;
-            border-radius: 4px;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        .progress-bar {
-            height: 100%;
-            background: #4caf50;
-            border-radius: 4px;
-        }
-        .percent-label {
-            margin-left: 6px;
-            font-size: 0.85rem;
-            color: #555;
-        }
-    </style>
+    .node-line{ display:flex; align-items:center; gap:10px; margin:6px 0; }
+    .tree-node{ cursor:pointer; user-select:none; }
 
-    <script>
-        // Simple toggle/expand/collapse helpers
-        function toggle(id) {
-            var elem = document.getElementById(id);
-            if (!elem) return;
-            elem.style.display = (elem.style.display === "none") ? "block" : "none";
-        }
-        function expandAll() {
-            var elems = document.getElementsByClassName('children');
-            for (var i = 0; i < elems.length; i++) elems[i].style.display = "block";
-        }
-        function collapseAll() {
-            var elems = document.getElementsByClassName('children');
-            for (var i = 0; i < elems.length; i++) elems[i].style.display = "none";
-        }
+    .green{ color:var(--green); font-weight:700; }
+    .red{ color:var(--red); font-weight:700; }
+    .orange{ color:var(--orange); font-weight:700; }
+    .grey{ color:var(--grey); }
 
-        // Tree data injected from Python
-        var treeData = {{ tree_json | safe }};
+    .children{
+        display:none; margin-left:18px; padding-left:12px;
+        border-left:1px dashed var(--border);
+    }
 
-        function renderTree(node, id_prefix) {
-            var node_id = id_prefix + "_children";
-            var html = "";
+    /* Progress bar: green = resolved */
+    .progress-container{
+        width:120px; height:10px; background:#293039;
+        border-radius:6px; overflow:hidden;
+    }
+    .progress-bar{
+        height:100%; background:var(--green);
+        border-radius:6px;
+    }
+    .percent-label{
+        min-width:40px; text-align:right;
+        font-variant-numeric: tabular-nums;
+    }
+</style>
 
-            var barWidth = node.pct; // 0–100
 
-            html += "<div class='node-line'>";
-            html += "<span class='tree-node " + node.color + "' onclick='toggle(\"" + node_id + "\")'>";
-            html += node.name + "</span>";
+<script>
+    function toggle(id){
+        var e=document.getElementById(id);
+        if(e) e.style.display = (e.style.display==="none")?"block":"none";
+    }
+    function expandAll(){
+        var e=document.getElementsByClassName('children');
+        for(var i=0;i<e.length;i++) e[i].style.display="block";
+    }
+    function collapseAll(){
+        var e=document.getElementsByClassName('children');
+        for(var i=0;i<e.length;i++) e[i].style.display="none";
+    }
 
-            // Progress bar
-            html += "<div class='progress-container'>";
-            html += "<div class='progress-bar' style='width:" + barWidth + "%;'></div>";
-            html += "</div>";
+    var treeData = {{ tree_json | safe }};
 
-            // Percentage label
-            html += "<span class='percent-label'>" + node.pct + "%</span>";
+    function normalize(s){ return (s||"").toLowerCase(); }
 
-            html += "</div>";
+    function searchTree(){
+        var q = normalize(document.getElementById("tree-search").value);
+        var container = document.getElementById("tree-container");
+        var lines = container.querySelectorAll(".node-line");
 
-            if (node.children && node.children.length > 0) {
-                html += "<div class='children' id='" + node_id + "'>";
-                for (var i = 0; i < node.children.length; i++) {
-                    html += renderTree(node.children[i], id_prefix + "_" + i);
-                }
-                html += "</div>";
-            }
-            return html;
-        }
-
-        window.onload = function() {
-            var container = document.getElementById("tree-container");
-            if (!treeData) {
-                container.innerHTML = "<em>No tree data</em>";
-                return;
-            }
-            container.innerHTML =
-                "<div class='controls'>" +
-                "<button class='btn' onclick='expandAll()'>Expand all</button>" +
-                "<button class='btn' onclick='collapseAll()'>Collapse all</button>" +
-                "</div>" +
-                renderTree(treeData, "node");
-
-            // By default: collapse all, then expand root for context
+        if(!q){
+            lines.forEach(l => l.style.background="transparent");
             collapseAll();
-            var root = document.getElementById("node_children");
-            if (root) root.style.display = "block";
+            let r = document.getElementById("node_children");
+            if(r) r.style.display="block";
+            return;
         }
-    </script>
+
+        expandAll();
+        lines.forEach(l => {
+            let txt = normalize(l.textContent);
+            l.style.background = txt.includes(q) ? "rgba(62,166,255,0.18)" : "transparent";
+        });
+    }
+
+    function renderTree(node, prefix){
+        var id = prefix + "_children";
+        var html = "";
+
+        html += "<div class='node-line'>";
+        html += "<span class='tree-node " + node.color +
+                "' onclick='toggle(\"" + id + "\")'>" +
+                node.name + "</span>";
+
+        html += "<div class='progress-container'><div class='progress-bar' style='width:" +
+                node.pct + "%;'></div></div>";
+
+        html += "<span class='percent-label'>" + node.pct + "%</span>";
+        html += "<span class='muted'>(" + node.resolved + "/" + node.total + ")</span>";
+
+        html += "</div>";
+
+        if(node.children && node.children.length>0){
+            html += "<div class='children' id='" + id + "'>";
+            for(var i=0;i<node.children.length;i++){
+                html += renderTree(node.children[i], prefix + "_" + i);
+            }
+            html += "</div>";
+        }
+        return html;
+    }
+
+    window.onload = function(){
+        var container=document.getElementById("tree-container");
+        container.innerHTML = renderTree(treeData, "node");
+
+        collapseAll();
+        var root=document.getElementById("node_children");
+        if(root) root.style.display="block";
+    }
+</script>
+
 </head>
 <body>
 
-<h1>Partition File Report</h1>
-<div class="meta">Generated from <code>{{ csv_path }}</code></div>
+<div class="content">
 
-<h2>Overall Partition Presence</h2>
-{{ overall_chart | safe }}
+    <div class="card">
+        <h2>Overall Partition Status</h2>
+        <div class="muted">CSV: <code>{{ csv_path }}</code></div>
+        {{ overall_chart | safe }}
+    </div>
 
-<h2>Folder Tree (LCOV Style)</h2>
-<div id="tree-container"></div>
+    <div class="card">
+        <h2>Folder Tree</h2>
+        <div class="muted">Bars show percentage of directories already fixed (green).</div>
 
-<h2>Per‑Platform Partition Statistics</h2>
-{% for platform, chart in platform_charts %}
-    <h3>{{ platform }}</h3>
-    {{ chart | safe }}
-{% endfor %}
+        <div class="tree-controls">
+            <input id="tree-search" class="tree-search" placeholder="Search…" oninput="searchTree()">
+            <button class="btn" onclick="expandAll()">Expand all</button>
+            <button class="btn" onclick="collapseAll()">Collapse all</button>
+        </div>
+
+        <div id="tree-container"></div>
+    </div>
+
+</div>
 
 </body>
 </html>
@@ -321,64 +322,43 @@ HTML_TEMPLATE = Template(
 def main():
     args = parse_args()
 
-    if not os.path.isfile(args.csv):
-        raise FileNotFoundError(f"CSV file not found: {args.csv}")
-
-    # Load and normalize CSV
     df = pd.read_csv(args.csv)
     df = normalize_columns(df)
 
-    # Column resolution (robust to trailing spaces)
     col_map = {c.strip().lower(): c for c in df.columns}
-    if "path" not in col_map or "partitions_present" not in col_map:
-        raise ValueError(
-            f"CSV must contain 'path' and 'partitions_present' columns. Found: {list(df.columns)}"
-        )
     path_col = col_map["path"]
     part_col = col_map["partitions_present"]
 
-    # Normalize partition flag to boolean
     df["has_partition"] = coerce_to_bool(df[part_col])
 
-    # Extract platform
-    df["platform"] = df[path_col].astype(str).apply(extract_platform_from_path)
-
-    # -------- Build tree --------
-    # Prefer root name 'twister-out' if present, else use the first segment of first path
-    first_path = str(df[path_col].iloc[0]).strip("/")
-    first_parts = first_path.split("/") if first_path else ["root"]
-    preferred_root = "twister-out" if any(p.strip("/").startswith("twister-out") for p in df[path_col].astype(str)) else first_parts[0] or "root"
+    # Build tree
+    first_path = df[path_col].iloc[0].strip("/")
+    preferred_root = (
+        "twister-out" if "twister-out" in first_path else first_path.split("/")[0]
+    )
 
     tree_root = new_node()
 
     for _, row in df.iterrows():
-        raw_path = str(row[path_col]).strip("/")
-        parts = raw_path.split("/") if raw_path else []
-        # Drop the preferred_root from insertion so the displayed root is that name
+        p = str(row[path_col]).strip("/")
+        parts = p.split("/") if p else []
         if parts and parts[0] == preferred_root:
             parts = parts[1:]
         insert_path(tree_root, parts, bool(row["has_partition"]))
 
-    # Aggregate colors & convert for JS
     aggregate_color(tree_root)
     tree_js = convert_for_js(preferred_root, tree_root)
 
-    # -------- Charts --------
-    overall_html = overall_pie(df["has_partition"])
-    platform_charts = platform_pies(df)
-
-    # -------- HTML out --------
     html = HTML_TEMPLATE.render(
         csv_path=os.path.abspath(args.csv),
-        overall_chart=overall_html,
-        platform_charts=platform_charts,
+        overall_chart=overall_pie(df["has_partition"]),
         tree_json=json.dumps(tree_js),
     )
 
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(html)
 
-    print(f"Report generated: {args.output}")
+    print("Report generated:", args.output)
 
 
 if __name__ == "__main__":
