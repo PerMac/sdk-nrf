@@ -1,32 +1,37 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse
 import json
 import os
-from typing import Dict, Any, Tuple, List
+import glob
 
 import pandas as pd
 import plotly.express as px
 from jinja2 import Template
 
-
-# ----------------------------- CLI ---------------------------------
+# ----------------------------- CLI ------------------------------------------
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Generate HTML report with pie chart + interactive folder tree (platform moved to the end)."
+        description="Generate HTML report from all CSV files in a directory."
     )
-    p.add_argument("csv", help="Path to the CSV report (columns: path, partitions_present)")
-    p.add_argument("-o", "--output", default="report.html", help="Output HTML file name")
+    p.add_argument(
+        "csv_dir",
+        help="Path to a directory containing CSV reports"
+    )
+    p.add_argument(
+        "-o", "--output",
+        default="report.html",
+        help="Output HTML file name"
+    )
     return p.parse_args()
 
-
-# --------------------------- Helpers --------------------------------
+# ----------------------------- Helpers --------------------------------------
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [c.strip() for c in df.columns]
     return df
-
 
 def coerce_to_bool(series: pd.Series) -> pd.Series:
     truthy = {"true", "1", "yes", "y", "t"}
@@ -46,11 +51,9 @@ def coerce_to_bool(series: pd.Series) -> pd.Series:
 
     return series.apply(_to_bool)
 
-
-# ------------------------ Tree construction -------------------------
+# ----------------------------- Tree construction ----------------------------
 def new_node():
     return {"children": {}, "partitions": []}
-
 
 def insert_path(root_node, parts, has_partition):
     node = root_node
@@ -60,14 +63,7 @@ def insert_path(root_node, parts, has_partition):
         node = node["children"][p]
     node["partitions"].append(has_partition)
 
-
 def aggregate_color(node):
-    """
-    Aggregate children to compute:
-      - true: number of leaves that STILL have partitions (bad)
-      - total: number of leaves
-      - color: red (all bad), green (all resolved), orange (mixed), grey (no data)
-    """
     true_count = sum(1 for v in node["partitions"] if v)
     total_count = len(node["partitions"])
 
@@ -79,21 +75,20 @@ def aggregate_color(node):
     if total_count == 0:
         color = "grey"
     elif true_count == 0:
-        color = "green"   # good: fully resolved below
+        color = "green"
     elif true_count == total_count:
-        color = "red"     # bad: everything below still has partitions
+        color = "red"
     else:
-        color = "orange"  # mixed
+        color = "orange"
 
     node["_agg"] = {"true": true_count, "total": total_count, "color": color}
     return true_count, total_count, color
 
-
 def convert_for_js(name, node):
     agg = node.get("_agg", {"true": 0, "total": 0, "color": "grey"})
-    t = agg["true"]             # STILL has partitions
+    t = agg["true"]
     n = agg["total"]
-    resolved = n - t            # fixed paths
+    resolved = n - t
     pct = 0 if n == 0 else round((resolved / n) * 100)
 
     return {
@@ -102,15 +97,14 @@ def convert_for_js(name, node):
         "true": t,
         "total": n,
         "resolved": resolved,
-        "pct": pct,  # progress (resolved/total)
+        "pct": pct,
         "children": [
             convert_for_js(child_name, child_node)
             for child_name, child_node in sorted(node["children"].items())
         ],
     }
 
-
-# --------------------------- Pie Chart -------------------------------
+# ----------------------------- Pie Chart ------------------------------------
 def overall_pie(series):
     df_counts = pd.DataFrame(
         {
@@ -328,33 +322,45 @@ r"""<!DOCTYPE html>
 
 
 # --------------------------- Main -----------------------------------
+
 def main():
     args = parse_args()
 
-    # Load & normalize
-    df = pd.read_csv(args.csv)
-    df = normalize_columns(df)
+    # Collect CSVs in directory (NON-RECURSIVE)
+    csv_paths = sorted(glob.glob(os.path.join(args.csv_dir, "*.csv")))
+    if not csv_paths:
+        raise FileNotFoundError(f"No CSV files found in directory: {args.csv_dir}")
 
+    # Load and merge
+    frames = []
+    for p in csv_paths:
+        df = pd.read_csv(p)
+        df = normalize_columns(df)
+        frames.append(df)
+
+    df = pd.concat(frames, ignore_index=True)
+
+    # Normalize columns
     col_map = {c.strip().lower(): c for c in df.columns}
     if "path" not in col_map or "partitions_present" not in col_map:
         raise ValueError(
-            f"CSV must contain 'path' and 'partitions_present' columns. Found: {list(df.columns)}"
+            f"CSVs must contain 'path' and 'partitions_present' columns. Found: {list(df.columns)}"
         )
+
     path_col = col_map["path"]
     part_col = col_map["partitions_present"]
 
+    # Coerce partition bool
     df["has_partition"] = coerce_to_bool(df[part_col])
 
-    # Determine displayed root
-    # Prefer 'twister-out' if present anywhere; otherwise use the first segment of the first path.
+    # Determine root
     any_contains_twister = any("twister-out" in str(p) for p in df[path_col].astype(str))
     first_path = str(df[path_col].iloc[0]).strip("/")
     fallback_root = (first_path.split("/")[0] if first_path else "root")
     preferred_root = "twister-out" if any_contains_twister else fallback_root
 
-    # Build tree with PLATFORM MOVED TO THE END
+    # Build tree
     tree_root = new_node()
-
     for _, row in df.iterrows():
         raw = str(row[path_col]).strip("/")
         parts = [p for p in raw.split("/") if p]
@@ -362,25 +368,24 @@ def main():
         if preferred_root in parts:
             ridx = parts.index(preferred_root)
             platform = parts[ridx + 1] if (ridx + 1) < len(parts) else "(unknown-platform)"
-            middle = parts[ridx + 2 :] if (ridx + 2) <= len(parts) else []
+            middle = parts[ridx + 2:] if (ridx + 2) <= len(parts) else []
             reordered = [preferred_root] + middle + [platform]
         else:
-            # Fallback: assume first segment is platform, push it to the end
             platform = parts[0] if parts else "(unknown-platform)"
             middle = parts[1:] if len(parts) > 1 else []
             reordered = [preferred_root] + middle + [platform]
 
-        # Insert without the displayed root (we show root as header only)
-        insert_parts = reordered[1:] if (reordered and reordered[0] == preferred_root) else reordered
+        insert_parts = reordered[1:] if reordered and reordered[0] == preferred_root else reordered
         insert_path(tree_root, insert_parts, bool(row["has_partition"]))
 
-    # Aggregate & convert to JS
     aggregate_color(tree_root)
     tree_js = convert_for_js(preferred_root, tree_root)
 
     # Render HTML
     html = HTML_TEMPLATE.render(
-        csv_path=os.path.abspath(args.csv),
+        input_dir=os.path.abspath(args.csv_dir),
+        csv_files=[os.path.abspath(p) for p in csv_paths],
+        n_files=len(csv_paths),
         overall_chart=overall_pie(df["has_partition"]),
         tree_json=json.dumps(tree_js),
     )
