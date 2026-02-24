@@ -355,16 +355,17 @@ def main():
 
     # Determine root
     any_contains_twister = any("twister-out" in str(p) for p in df[path_col].astype(str))
-    first_path = str(df[path_col].iloc[0]).strip("/")
-    fallback_root = (first_path.split("/")[0] if first_path else "root")
-    preferred_root = "twister-out" if any_contains_twister else fallback_root
+    preferred_root = "twister-out" if any_contains_twister else "NCS"
 
     # Build tree
     tree_root = new_node()
     for _, row in df.iterrows():
         raw = str(row[path_col]).strip("/")
         parts = [p for p in raw.split("/") if p]
-
+        parts[0] = "NCS"
+        #remove obsolete segments from the structure
+        if parts[2] in ["zephyr", "host"]:
+            parts.pop(2)
         if preferred_root in parts:
             ridx = parts.index(preferred_root)
             platform = parts[ridx + 1] if (ridx + 1) < len(parts) else "(unknown-platform)"
