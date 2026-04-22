@@ -53,16 +53,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          tmpfile=$(mktemp)
 
-          # Build union list of quarantine yaml files by relative path
-          mapfile -t all_files < <(
-            {
-              find ./pr/scripts -type f -name 'quarantine*.yaml'
-              find ./base/scripts -type f -name 'quarantine*.yaml'
-            } \
-            | sed -E 's|^\./(pr|base)/||' \
-            | sort -u
-          )
+          find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+          find ./base/scripts -type f -name 'quarantine*.yaml' 2>/dev/null \
+            | sed -E 's#^\./(pr|base)/##' \
+            | sort -u \
+            > "$tmpfile"
+
+          mapfile -t all_files < "$tmpfile"
+          rm -f "$tmpfile"
+
+          echo "DEBUG: all_files count = ${#all_files[@]}"
+          for f in "${all_files[@]}"; do
+            echo "DEBUG: all_files -> $f"
+          done
 
           changed=()
           for rel in "${all_files[@]}"; do
@@ -74,6 +79,13 @@ jobs:
               changed+=("$rel")
             fi
           done
+
+
+          echo "DEBUG: all_files count = ${#all_files[@]}"
+          for f in "${all_files[@]}"; do
+            echo "DEBUG: all_files -> $f"
+          done
+
 
           echo "Changed quarantine files count: ${#changed[@]}"
           if [[ ${#changed[@]} -gt 0 ]]; then
@@ -96,14 +108,6 @@ jobs:
           west init -l ./base
           echo "west update"
           west update --narrow
-          echo "ls"
-          ls
-          echo "ls .."
-          ls ..
-          echo "ls base"
-          ls base
-          echo "ls zephyr"
-          ls zephyr
           export ZEPHYR_BASE="zephyr"
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
