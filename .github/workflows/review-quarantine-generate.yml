@@ -57,11 +57,11 @@ jobs:
           # Build union list of quarantine yaml files by relative path
           mapfile -t all_files < <(
             {
-              find ./pr/scripts -type f -name 'quarantine*.yaml' -print
-            }
-            {
-              find ./base/scripts -type f -name 'quarantine*.yaml' -print
-            } | sed 's|^\./||' | sort -u
+              find ./pr/scripts -type f -name 'quarantine*.yaml'
+              find ./base/scripts -type f -name 'quarantine*.yaml'
+            } \
+            | sed -E 's|^\./(pr|base)/||' \
+            | sort -u
           )
 
           changed=()
@@ -113,7 +113,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 base/scripts/compare_quarantine.py "$rel/../base" "$rel" --outdir "$OUTDIR"
+            python3 base/scripts/compare_quarantine.py "base/$rel" "pr/$rel" --outdir "$OUTDIR"
           done <<< "$files"
 
       - name: Upload quarantine scenario diff artifacts
