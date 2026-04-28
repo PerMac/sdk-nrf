@@ -59,41 +59,52 @@ jobs:
           # Expose as a step output (safer than $GITHUB_ENV here)
           printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
-      - name: Check for comment content
-        id: has_comment
-        shell: bash
+
+      - name: Create or update quarantine notification comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ env.REPO }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          COMMENT_FILE: ${{ steps.comment.outputs.comment_file }}
         run: |
           set -euo pipefail
-          # Find the comment file
-          COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
-          if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
-            echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ERROR: Quarantine comment not found or empty." >&2
-            exit 1
+
+          MARKER='<!-- quarantine-comment -->'
+          BODY="$(cat "$COMMENT_FILE")"
+
+          # Ensure marker is always present
+          if [[ "$BODY" != *"$MARKER"* ]]; then
+            BODY="$MARKER"$'\n'"$BODY"
           fi
 
-      - name: Post or update PR comment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ env.REPO }}
-          PR_NUMBER: ${{ steps.pr_num.outputs.pr_number }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          BODY="$(cat "${{ steps.has_comment.outputs.comment_file }}")"
-
-          # Try to find an existing quarantine-notification comment to update
+          # Find an existing issue comment on this PR created by the bot and containing our marker.
+          # This returns the numeric REST ID, which is what PATCH expects.
           existing_id="$(
-            gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-              --jq '.comments[] | select(.body | contains("Quarantine update – notifying maintainers")) | .id' \
-              || true
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --paginate \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("'"$MARKER"'"))) | .id' \
+              | tail -n1
           )"
 
-          if [[ -n "$existing_id" ]]; then
+          payload="$(mktemp)"
+          jq -n --arg body "$BODY" '{body: $body}' > "$payload"
+
+          if [[ -n "${existing_id:-}" ]]; then
             echo "Updating existing quarantine notification comment (id=$existing_id)."
-            gh api -X PATCH "repos/$REPO/issues/comments/$existing_id" -f body="$BODY" >/dev/null
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/comments/$existing_id" \
+              --input "$payload" \
+              >/dev/null
           else
             echo "Creating quarantine notification comment."
-            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "$BODY" >/dev/null
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --input "$payload" \
+              >/dev/null
           fi
