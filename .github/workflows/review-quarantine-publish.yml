@@ -88,7 +88,7 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               "repos/$REPO/issues/$PR_NUMBER/comments" \
               --paginate \
-              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("'"$MARKER"'"))) | .id' \
+              --jq '.[] | select(.body | contains("'"$MARKER"'")) | .id' \
               | tail -n1
           )"
 
