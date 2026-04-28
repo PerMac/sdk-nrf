@@ -59,6 +59,19 @@ jobs:
           # Expose as a step output (safer than $GITHUB_ENV here)
           printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
+      - name: Check for comment content
+        id: has_comment
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find the comment file
+          COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
+          if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
+            echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: Quarantine comment not found or empty." >&2
+            exit 1
+          fi
 
       - name: Create or update quarantine notification comment
         env:
