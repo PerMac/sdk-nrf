@@ -36,9 +36,8 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: ./quarantine-artifacts
 
-      - name: Read PR number from artifact (sanitized)
-        id: pr_num
-        shell: bash
+      - name: Read PR number from artifact
+        id: pr
         run: |
           set -euo pipefail
           PR_FILE="$(find ./quarantine-artifacts -type f -name 'pr_number.txt' -print -quit)"
@@ -47,27 +46,22 @@ jobs:
             exit 1
           fi
 
-          # Read first line and strip CR/LF
           PR_NUMBER="$(head -n1 -- "$PR_FILE" | tr -d '\r\n')"
 
-          # Strict validation: PR number must be decimal digits only
           if [[ ! "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
             echo "ERROR: Invalid PR number: '$PR_NUMBER'" >&2
             exit 1
           fi
 
-          # Expose as a step output (safer than $GITHUB_ENV here)
           printf 'pr_number=%s\n' "$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
-      - name: Check for comment content
-        id: has_comment
-        shell: bash
+      - name: Find generated comment file
+        id: comment
         run: |
           set -euo pipefail
-          # Find the comment file
           COMMENT_FILE="$(find ./quarantine-artifacts -type f -name 'quarantine_comment.md' | head -n1 || true)"
           if [[ -n "${COMMENT_FILE}" && -s "${COMMENT_FILE}" ]]; then
-            echo "comment_file=${COMMENT_FILE}" >> "$GITHUB_OUTPUT"
+            printf 'comment_file=%s\n' "$COMMENT_FILE" >> "$GITHUB_OUTPUT"
           else
             echo "ERROR: Quarantine comment not found or empty." >&2
             exit 1
@@ -85,13 +79,10 @@ jobs:
           MARKER='<!-- quarantine-comment -->'
           BODY="$(cat "$COMMENT_FILE")"
 
-          # Ensure marker is always present
           if [[ "$BODY" != *"$MARKER"* ]]; then
             BODY="$MARKER"$'\n'"$BODY"
           fi
 
-          # Find an existing issue comment on this PR created by the bot and containing our marker.
-          # This returns the numeric REST ID, which is what PATCH expects.
           existing_id="$(
             gh api \
               -H "Accept: application/vnd.github+json" \
