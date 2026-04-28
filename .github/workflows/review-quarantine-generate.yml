@@ -53,6 +53,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # NOTE: We intentionally write to a tmpfile first instead of using
+          # `mapfile < <(pipeline)`. Bash process substitution swallows failures
+          # inside the pipeline (even with `set -euo pipefail`), which can cause
+          # silent success on sed/find errors. Writing to a file ensures any
+          # failure aborts the step and fails the workflow.
           tmpfile=$(mktemp)
 
           find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
@@ -64,11 +69,6 @@ jobs:
           mapfile -t all_files < "$tmpfile"
           rm -f "$tmpfile"
 
-          echo "DEBUG: all_files count = ${#all_files[@]}"
-          for f in "${all_files[@]}"; do
-            echo "DEBUG: all_files -> $f"
-          done
-
           changed=()
           for rel in "${all_files[@]}"; do
             b="base/$rel"
@@ -79,13 +79,6 @@ jobs:
               changed+=("$rel")
             fi
           done
-
-
-          echo "DEBUG: all_files count = ${#all_files[@]}"
-          for f in "${all_files[@]}"; do
-            echo "DEBUG: all_files -> $f"
-          done
-
 
           echo "Changed quarantine files count: ${#changed[@]}"
           if [[ ${#changed[@]} -gt 0 ]]; then
@@ -106,8 +99,8 @@ jobs:
           set -euo pipefail
           echo "west init -l ./base"
           west init -l ./base
-          echo "west update"
-          west update --narrow
+          echo "update zephyr --narrow"
+          west update zephyr --narrow
           export ZEPHYR_BASE="zephyr"
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
