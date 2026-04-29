@@ -20,6 +20,8 @@ sys.path.insert(0, str(ZEPHYR_BASE / 'scripts' / 'pylib' / 'twister' / 'twisterl
 from quarantine import QuarantineData
 
 
+ALL_PLATFORMS_TOKEN = "__ALL__"
+
 def get_all_configurations(quarantine_file):
     """Extract all configurations from a quarantine file."""
     try:
@@ -29,7 +31,7 @@ def get_all_configurations(quarantine_file):
         for qelem in quarantine_data.qlist:
             # Add all configurations from this quarantine element
             scenarios = qelem.scenarios if qelem.scenarios else [None]
-            platforms = qelem.platforms if qelem.platforms else [None]
+            platforms = qelem.platforms if qelem.platforms else [ALL_PLATFORMS_TOKEN]
             # Generate all possible pairs
             configurations.update(product(scenarios, platforms))
         return configurations
