@@ -60,8 +60,10 @@ jobs:
           # failure aborts the step and fails the workflow.
           tmpfile=$(mktemp)
 
+          {
           find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
           find ./base/scripts -type f -name 'quarantine*.yaml' 2>/dev/null \
+          } \
             | sed -E 's#^\./(pr|base)/##' \
             | sort -u \
             > "$tmpfile"
@@ -114,8 +116,9 @@ jobs:
             python3 base/scripts/compare_quarantine.py "base/$rel" "pr/$rel" --outdir "$OUTDIR"
           done <<< "$files"
 
+
       - name: Upload quarantine scenario diff artifacts
-        if: steps.compare_quarantine.changed == 'true'
+        if: ${{ hashFiles('quarantine-diff-results/*.txt') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: quarantine-scenario-diff
