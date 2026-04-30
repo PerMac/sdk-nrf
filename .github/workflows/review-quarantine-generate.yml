@@ -95,6 +95,7 @@ jobs:
 
       - name: Compare only affected quarantine YAMLs (base vs PR)
         shell: bash
+        id: compare_quarantine
         run: |
           set -euo pipefail
           echo "west init -l ./base"
@@ -114,7 +115,7 @@ jobs:
           done <<< "$files"
 
       - name: Upload quarantine scenario diff artifacts
-        if: steps.detect_quarantine.outputs.changed == 'true'
+        if: steps.compare_quarantine.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: quarantine-scenario-diff
