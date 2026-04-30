@@ -61,12 +61,12 @@ jobs:
           tmpfile=$(mktemp)
 
           {
-          find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
-          find ./base/scripts -type f -name 'quarantine*.yaml' 2>/dev/null \
+            find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+            find ./base/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
           } \
-            | sed -E 's#^\./(pr|base)/##' \
-            | sort -u \
-            > "$tmpfile"
+          | sed -E 's#^\./(pr|base)/##' \
+          | sort -u \
+          > "$tmpfile"
 
           mapfile -t all_files < "$tmpfile"
           rm -f "$tmpfile"
