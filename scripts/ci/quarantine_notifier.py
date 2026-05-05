@@ -14,12 +14,10 @@ INPUTS:
   --strict-missing-codeowners              # mark violation when any affected scenario lacks owners
   --strict-flag-file strict_missing_codeowners.flag
   --audit-json quarantine_audit.json       # JSON summary output (owners, scenarios, platforms, etc.)
-  --inventory-json scenario_inventory.json # JSON map: scenario -> [yaml_paths]
 
 OUTPUTS:
   * quarantine_comment.md                  # Markdown body to post
   * quarantine_audit.json                  # Full machine-readable summary for auditing
-  * scenario_inventory.json
   * strict_missing_codeowners.flag         # (only when strict mode enabled AND violations found)
 
 No GitHub API calls here; the workflow will post the comment and upload artifacts.
@@ -65,11 +63,6 @@ def parse_args() -> argparse.Namespace:
         "--audit-json", default="quarantine_audit.json", help="Audit summary JSON output path."
     )
     p.add_argument(
-        "--inventory-json",
-        default="scenario_inventory.json",
-        help="Scenario inventory JSON output path.",
-    )
-    p.add_argument(
         "--ref",
         default=os.environ.get("GITHUB_SHA", "main"),
         help="Git ref/sha used for blob links in comment (default: env GITHUB_SHA or 'main').",
@@ -100,30 +93,6 @@ SCENARIO_YAML_GLOBS = [
     "tests/**/*/testcase.yaml",
     "tests/**/*/sample.yaml",
 ]
-
-
-def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
-    """
-    Map: scenario_name -> set(yaml_paths_defining_it)
-    Keys in top-level 'tests:' mapping of each YAML are Twister scenario names.
-    """
-    mapping: dict[str, set[str]] = {}
-    for pattern in SCENARIO_YAML_GLOBS:
-        for p in repo_root.glob(pattern):
-            if not p.is_file():
-                continue
-            try:
-                data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-                tests = data.get("tests", {})
-                if isinstance(tests, dict):
-                    for scenario in tests:
-                        s = str(scenario).strip()
-                        if s:
-                            rel = p.resolve().relative_to(repo_root.resolve()).as_posix()
-                            mapping.setdefault(s, set()).add(rel)
-            except Exception:
-                continue
-    return mapping
 
 
 # ---------------- CODEOWNERS parsing & matching ----------------
@@ -186,22 +155,6 @@ def owners_for_path(path: str, rules: list[tuple[str, list[str]]]) -> list[str]:
 # ---------------- Pattern expansion (legacy, kept untouched) ----------------
 def compile_rx(pattern: str) -> re.Pattern:
     return re.compile(pattern + r"\Z")  # full-match semantics
-
-
-def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> set[str]:
-    out: set[str] = set()
-    compiled: list[tuple[str, re.Pattern]] = []
-    for p in patterns:
-        try:
-            compiled.append((p, compile_rx(p)))
-        except re.error:
-            compiled.append((p, re.compile(re.escape(p) + r"\Z")))
-    for name in known_scenarios:
-        for _, rx in compiled:
-            if rx.fullmatch(name):
-                out.add(name)
-                break
-    return out
 
 
 # ---------------- Comment formatting ----------------
@@ -397,13 +350,13 @@ def main() -> int:
         print(f"Configuration file(s) not found: {', '.join(missing)}", file=sys.stderr)
         Path(args.output).write_text("", encoding="utf-8")
         write_json(Path(args.audit_json), {"error": "config_files_not_found", "missing": missing})
-        write_json(Path(args.inventory_json), {})
         return 1
 
     added_cfg = load_configurations(added_path)
     removed_cfg = load_configurations(removed_path)
 
-    scenario_map = discover_scenarios(root)
+    # TODO LOAD_MAP+FORM_PREVIOUS()
+    scenario_map = LOAD_MAP+FORM_PREVIOUS()
     code_rules = load_codeowners(root)
 
     # Build scenario -> platforms maps and platform-only sets
@@ -420,25 +373,23 @@ def main() -> int:
             s.add(plat)
 
     for scen, plat in added_cfg:
-        if scen is None and plat is not None:
+        if scen is None and plat is not ALL_PLATFORMS_TOKEN:
             platform_only_added.add(plat)
         else:
             add_pair(scenario_to_added_platforms, scen, plat)
 
     for scen, plat in removed_cfg:
-        if scen is None and plat is not None:
+        if scen is None and plat is not ALL_PLATFORMS_TOKEN:
             platform_only_removed.add(plat)
         else:
             add_pair(scenario_to_removed_platforms, scen, plat)
 
-    expanded_add = expand_patterns(sorted(set(scenario_to_added_platforms.keys())), scenario_map.keys())
-    expanded_del = expand_patterns(sorted(set(scenario_to_removed_platforms.keys())), scenario_map.keys())
-
+    # expanded_add/del replace with list from input
     owned_add, unowned_add = resolve_codeowners_for_scenarios(
-        scenario_map, expanded_add, code_rules
+        scenario_map, scenario_to_added_platforms, code_rules
     )
     owned_del, unowned_del = resolve_codeowners_for_scenarios(
-        scenario_map, expanded_del, code_rules
+        scenario_map, scenario_to_removed_platforms, code_rules
     )
 
 
@@ -456,9 +407,6 @@ def main() -> int:
     )
 
     Path(args.output).write_text(body, encoding="utf-8")
-
-    # Inventory JSON (scenario -> [paths])
-    write_json(Path(args.inventory_json), {k: sorted(v) for k, v in sorted(scenario_map.items())})
 
     # Audit JSON summary
     audit = {
