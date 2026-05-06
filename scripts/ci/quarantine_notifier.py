@@ -80,21 +80,6 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-# ---------------- Diff parsing (legacy - unused now, kept untouched) ----------------
-DIFF_SKIP_PREFIXES = ("diff --git ", "index ", "--- ", "+++ ", "@@")
-
-
-# ---------------- Scenario discovery ----------------
-SCENARIO_YAML_GLOBS = [
-    "samples/**/*/sample.yaml",
-    "samples/**/*/testcase.yaml",
-    "applications/**/*/sample.yaml",
-    "applications/**/*/testcase.yaml",
-    "tests/**/*/testcase.yaml",
-    "tests/**/*/sample.yaml",
-]
-
-
 # ---------------- CODEOWNERS parsing & matching ----------------
 CODEOWNERS_PATH = "CODEOWNERS"
 CODEOWNER_LINE_RE = re.compile(r"^\s*([^\s#][^\s]*)\s+(.+?)\s*$")
