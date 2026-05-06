@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 """
-Token-free quarantine notifier (configuration-driven) with strict mode + audit JSON.
+Token-free quarantine notifier (configuration-driven) with strict mode
 
 INPUTS:
   --added-file  configurations_added.txt   # lines: ("scenario","platform")
@@ -13,11 +13,10 @@ INPUTS:
   --ref <sha>                              # head sha for blob URLs in the comment
   --strict-missing-codeowners              # mark violation when any affected scenario lacks owners
   --strict-flag-file strict_missing_codeowners.flag
-  --audit-json quarantine_audit.json       # JSON summary output (owners, scenarios, platforms, etc.)
+  --scenario-map scenario_map.txt          # list of all scenarios and their defining paths (for codeowners resolution)
 
 OUTPUTS:
   * quarantine_comment.md                  # Markdown body to post
-  * quarantine_audit.json                  # Full machine-readable summary for auditing
   * strict_missing_codeowners.flag         # (only when strict mode enabled AND violations found)
 
 No GitHub API calls here; the workflow will post the comment and upload artifacts.
@@ -60,9 +59,6 @@ def parse_args() -> argparse.Namespace:
         "--output", default="quarantine_comment.md", help="Output Markdown file with comment body."
     )
     p.add_argument(
-        "--audit-json", default="quarantine_audit.json", help="Audit summary JSON output path."
-    )
-    p.add_argument(
         "--ref",
         default=os.environ.get("GITHUB_SHA", "main"),
         help="Git ref/sha used for blob links in comment (default: env GITHUB_SHA or 'main').",
@@ -76,6 +72,11 @@ def parse_args() -> argparse.Namespace:
         "--strict-flag-file",
         default="strict_missing_codeowners.flag",
         help="Path to flag file created when strict violation occurs.",
+    )
+    p.add_argument(
+        "--scenario-map",
+        default="scenario_map.txt",
+        help="Path to scenario map file (lines: ('scenario','defining_path')) for codeowners resolution.",
     )
     return p.parse_args()
 
@@ -266,7 +267,7 @@ def make_comment(
     return "\n".join(lines).strip() + "\n"
 
 
-# ---------------- Grouping & audit ----------------
+# ---------------- Grouping ----------------
 def resolve_codeowners_for_scenarios(
     scenario_to_paths: dict[str, set[str]],
     scenarios: Iterable[str],
@@ -276,13 +277,13 @@ def resolve_codeowners_for_scenarios(
     unowned: list[tuple[str, str]] = []
 
     for scen in scenarios:
-        for p in scenario_to_paths.get(scen, set()):
-            owners = owners_for_path(p, codeowners_rules)
-            if not owners:
-                unowned.append((scen, p))
-                continue
-            key = ",".join(sorted(set(owners), key=str.lower))
-            owners_map.setdefault(key, []).append((scen, p))
+        path = scenario_to_paths.get(scen, set())
+        owners = owners_for_path(path, codeowners_rules)
+        if not owners:
+            unowned.append((scen, path))
+            continue
+        key = ",".join(sorted(set(owners), key=str.lower))
+        owners_map.setdefault(key, []).append((scen, path))
 
     return owners_map, unowned
 
@@ -318,6 +319,21 @@ def load_configurations(path: Path) -> list[tuple[str | None, str | None]]:
     return pairs
 
 
+def load_scenario_map(path: Path) -> dict[str, set[str]]:
+    """
+    Load scenario map from a file.
+    Each line should look like: ("scenario": "path_to_yaml_with_it_defined")
+    """
+    map = {}
+    with open(path, 'r') as f:
+        scenario_map: dict[str, set[str]] = {}
+        for line in f:
+            s = line.strip()
+            scen, loc = s.split(":")
+            map[scen] = loc.strip()
+    return map
+
+
 # ---------------- Main ----------------
 def main() -> int:
     args = parse_args()
@@ -334,14 +350,12 @@ def main() -> int:
             missing.append(str(removed_path))
         print(f"Configuration file(s) not found: {', '.join(missing)}", file=sys.stderr)
         Path(args.output).write_text("", encoding="utf-8")
-        write_json(Path(args.audit_json), {"error": "config_files_not_found", "missing": missing})
         return 1
 
     added_cfg = load_configurations(added_path)
     removed_cfg = load_configurations(removed_path)
 
-    # TODO LOAD_MAP+FORM_PREVIOUS()
-    scenario_map = LOAD_MAP+FORM_PREVIOUS()
+    scenario_map = load_scenario_map(args.scenario_map)
     code_rules = load_codeowners(root)
 
     # Build scenario -> platforms maps and platform-only sets
@@ -393,51 +407,6 @@ def main() -> int:
 
     Path(args.output).write_text(body, encoding="utf-8")
 
-    # Audit JSON summary
-    audit = {
-        "repo": repo_full,
-        "ref": args.ref,
-        "configurations_added_file": str(added_path),
-        "configurations_removed_file": str(removed_path),
-        "configurations": {
-            "added": [
-                {"scenario": s if s is not None else "None", "platform": p if p is not None else "None"}
-                for (s, p) in added_cfg
-            ],
-            "removed": [
-                {"scenario": s if s is not None else "None", "platform": p if p is not None else "None"}
-                for (s, p) in removed_cfg
-            ],
-        },
-        "expanded": {
-            "added": sorted(list(expanded_add)),
-            "removed": sorted(list(expanded_del)),
-        },
-        "owners": {
-            key: {
-                "added": [{"scenario": s, "path": p} for (s, p) in sorted(owned_add.get(key, []))],
-                "removed": [{"scenario": s, "path": p} for (s, p) in sorted(owned_del.get(key, []))],
-            }
-            for key in sorted(set(owned_add.keys()) | set(owned_del.keys()), key=str.lower)
-        },
-        "unowned": {
-            "added": [{"scenario": s, "path": p} for (s, p) in sorted(unowned_add)],
-            "removed": [{"scenario": s, "path": p} for (s, p) in sorted(unowned_del)],
-        },
-        "stats": {
-            "config_lines_added": len(added_cfg),
-            "config_lines_removed": len(removed_cfg),
-            "scenarios_added": len(expanded_add),
-            "scenarios_removed": len(expanded_del),
-            "platform_only_added": len(platform_only_added),
-            "platform_only_removed": len(platform_only_removed),
-            "owners_groups": len(set(owned_add.keys()) | set(owned_del.keys())),
-            "unowned_items": len(unowned_add) + len(unowned_del),
-        },
-        "strict_mode": bool(args.strict_missing_codeowners),
-        "strict_violation": False,
-    }
-
     strict_violation = args.strict_missing_codeowners and (
         len(unowned_add) > 0 or len(unowned_del) > 0
     )
@@ -445,12 +414,10 @@ def main() -> int:
         Path(args.strict_flag_file).write_text(
             "Missing CODEOWNERS detected for affected scenarios.\n", encoding="utf-8"
         )
-        audit["strict_violation"] = True
         print(
             "Strict mode violation: missing CODEOWNERS found. Flag file created.", file=sys.stderr
         )
 
-    write_json(Path(args.audit_json), audit)
 
     if body.strip():
         print("Prepared quarantine comment with maintainer mentions and platforms.")
