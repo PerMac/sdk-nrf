@@ -10,19 +10,32 @@ Script to compare two quarantine.yaml files and report added/removed scenarios.
 import argparse
 import sys
 from collections.abc import Iterable
+from fnmatch import fnmatch
 from itertools import product
 from pathlib import Path
-
 
 # Add the twister library path to import Quarantine
 import os
 ZEPHYR_BASE = Path(os.getenv("ZEPHYR_BASE"))
 sys.path.insert(0, str(ZEPHYR_BASE / 'scripts' / 'pylib' / 'twister' / 'twisterlib'))
-
 from quarantine import QuarantineData
 
+try:
+    import yaml  # PyYAML
+except Exception:
+    print("ERROR: PyYAML is required (pip install pyyaml).", file=sys.stderr)
+    raise
 
 ALL_PLATFORMS_TOKEN = "__ALL__"
+
+SCENARIO_YAML_GLOBS = [
+    "**/samples/**/*/sample.yaml",
+    "**/samples/**/*/testcase.yaml",
+    "**/applications/**/*/sample.yaml",
+    "**/applications/**/*/testcase.yaml",
+    "**/tests/**/*/testcase.yaml",
+    "**/tests/**/*/sample.yaml",
+]
 
 def get_all_configurations(quarantine_file):
     """Extract all configurations from a quarantine file."""
@@ -42,20 +55,23 @@ def get_all_configurations(quarantine_file):
         sys.exit(1)
 
 
-def expand_patterns(patterns: Iterable[str], known_scenarios: Iterable[str]) -> set[str]:
-    out: set[str] = set()
-    compiled: list[tuple[str, re.Pattern]] = []
-    for p in patterns:
-        try:
-            compiled.append((p, compile_rx(p)))
-        except re.error:
-            compiled.append((p, re.compile(re.escape(p) + r"\Z")))
-    for name in known_scenarios:
-        for _, rx in compiled:
-            if rx.fullmatch(name):
-                out.add(name)
-                break
-    return out
+def expand_configurations(configurations: set[tuple[str, str]], scenario_map: dict[str, set[str]]) -> set[tuple[str, str]]:
+    """Expand configurations with scenario patterns to explicit scenario-platform pairs."""
+    expanded = set()
+    missing = set()
+    for scenario_pattern, platform in configurations:
+        if scenario_pattern is None:
+            # No scenario specified, keep as is
+            expanded.add((None, platform))
+        else:
+            # Expand scenario pattern using the scenario map
+            matched_scenarios = {s for s in scenario_map if fnmatch(s, scenario_pattern)}
+            if not matched_scenarios:
+                print(f"Warning: pattern '{scenario_pattern}' did not match any scenarios.")
+                missing.add((scenario_pattern, platform))            
+            for s in matched_scenarios:
+                expanded.add((s, platform))
+    return expanded, missing
 
 
 def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
@@ -65,7 +81,7 @@ def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
     """
     mapping: dict[str, set[str]] = {}
     for pattern in SCENARIO_YAML_GLOBS:
-        for p in repo_root.glob(pattern):
+        for p in repo_root.parent.glob(pattern):
             if not p.is_file():
                 continue
             try:
@@ -75,9 +91,10 @@ def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
                     for scenario in tests:
                         s = str(scenario).strip()
                         if s:
-                            rel = p.resolve().relative_to(repo_root.resolve()).as_posix()
+                            rel = p.resolve().relative_to(repo_root.parent.resolve()).as_posix()
                             mapping.setdefault(s, set()).add(rel)
-            except Exception:
+            except Exception as e:
+                print(f"Error processing {p}: {e}")
                 continue
     return mapping
 
@@ -91,8 +108,15 @@ def compare_quarantine_files(file1, file2, scenario_map):
     configurations1 = get_all_configurations(file1)
     configurations2 = get_all_configurations(file2)
 
-    expanded_add = expand_patterns(sorted(set(configurations1.keys())), scenario_map.keys())
-    expanded_del = expand_patterns(sorted(set(configurations2.keys())), scenario_map.keys())
+    expanded_add, missing_add = expand_configurations(sorted(set(configurations1)), scenario_map.keys())
+    expanded_del, missing_del = expand_configurations(sorted(set(configurations2)), scenario_map.keys())
+    if missing_add or missing_del:
+        print("Error: some scenario patterns could not be recognized:")
+        for pattern, platform in missing_add:
+            print(f"  + {pattern} (platform: {platform})")
+        for pattern, platform in missing_del:
+            print(f"  - {pattern} (platform: {platform})")
+        exit(1)
 
     added_configurations = expanded_add - expanded_del
     removed_configurations = expanded_del - expanded_add
@@ -129,9 +153,6 @@ if __name__ == "__main__":
         outdir = Path(outdir_arg).resolve(strict=False)
         try:
             outdir.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
-            print(f"Error: insufficient permissions to create output directory '{outdir}'.")
-            sys.exit(1)
         except Exception as e:
             print(f"Error: unable to create output directory '{outdir}': {e}")
             sys.exit(1)
@@ -175,4 +196,6 @@ if __name__ == "__main__":
     with open(outdir / f"configurations_removed{suffix}.txt", "w") as report_file:
         for config in sorted(removed_configurations):
             report_file.write(f"{config}\n")
-    # TODO: WRITE SCENARIO_MAP and REUSE IN NEXT WORKFLOW
+    with open(outdir / f"scenario_map.txt", "w") as report_file:
+        for scenario in sorted(scenario_map):
+            report_file.write(f"{scenario}: {', '.join(scenario_map[scenario])}\n")
