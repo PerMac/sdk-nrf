@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
 # ---------------- CODEOWNERS parsing & matching ----------------
 CODEOWNERS_PATH = "CODEOWNERS"
 CODEOWNER_LINE_RE = re.compile(r"^\s*([^\s#][^\s]*)\s+(.+?)\s*$")
+FIND_MY = "find_my"
 
 
 def load_codeowners(repo_root: Path) -> list[tuple[str, list[str]]]:
@@ -277,8 +278,12 @@ def resolve_codeowners_for_scenarios(
     unowned: list[tuple[str, str]] = []
 
     for scen in scenarios:
-        path = scenario_to_paths.get(scen, set())
-        owners = owners_for_path(path, codeowners_rules)
+        # find-my is not part of nrf, has no codeowners and repo with scenario YAMLs is private
+        if FIND_MY in scen:
+            owners = ["@ncs-find-my-leads"]  
+        else:
+            path = scenario_to_paths.get(scen, set())
+            owners = owners_for_path(path, codeowners_rules)
         if not owners:
             unowned.append((scen, path))
             continue

@@ -27,6 +27,7 @@ except Exception:
     raise
 
 ALL_PLATFORMS_TOKEN = "__ALL__"
+FIND_MY = "find_my"
 
 SCENARIO_YAML_GLOBS = [
     "**/samples/**/*/sample.yaml",
@@ -63,6 +64,9 @@ def expand_configurations(configurations: set[tuple[str, str]], scenario_map: di
         if scenario_pattern is None:
             # No scenario specified, keep as is
             expanded.add((None, platform))
+        if FIND_MY in scenario_pattern:
+            # find-my scenarios are not part of nrf
+            expanded.add((scenario_pattern, platform))
         else:
             # Expand scenario pattern using the scenario map
             matched_scenarios = {s for s in scenario_map if fnmatch(s, scenario_pattern)}
