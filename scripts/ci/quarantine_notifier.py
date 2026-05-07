@@ -280,7 +280,7 @@ def resolve_codeowners_for_scenarios(
     for scen in scenarios:
         # find-my is not part of nrf, has no codeowners and repo with scenario YAMLs is private
         if FIND_MY in scen:
-            owners = ["@ncs-find-my-leads"]  
+            owners = ["@ncs-si-bluebagel"]  
         else:
             path = scenario_to_paths.get(scen, set())
             owners = owners_for_path(path, codeowners_rules)
