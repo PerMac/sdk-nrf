@@ -102,8 +102,8 @@ jobs:
           set -euo pipefail
           echo "west init -l ./base"
           west init -l ./base
-          echo "update zephyr --narrow"
-          west update zephyr --narrow
+          echo "update zephyr find-my --narrow"
+          west update zephyr find-my --narrow
           export ZEPHYR_BASE="zephyr"
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
