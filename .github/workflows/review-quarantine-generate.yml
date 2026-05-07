@@ -135,7 +135,7 @@ jobs:
             --repo-root . \
             --added-file "../quarantine-diff-results/configurations_added.txt" \
             --removed-file "../quarantine-diff-results/configurations_removed.txt" \
-            --scenario-map "./quarantine-diff-results.txt" \
+            --scenario-map "./quarantine-diff-results/scenario_map.txt" \
             --output quarantine_comment.md \
             --ref "${HEAD_SHA}" \
             --strict-missing-codeowners \
