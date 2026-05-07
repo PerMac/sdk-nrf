@@ -113,7 +113,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 base/scripts/compare_quarantine.py "base/$rel" "pr/$rel" --outdir "$OUTDIR"
+            python3 base/scripts/compare_quarantine.py "base/$rel" "pr/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
 
@@ -135,6 +135,7 @@ jobs:
             --repo-root . \
             --added-file "../quarantine-diff-results/configurations_added.txt" \
             --removed-file "../quarantine-diff-results/configurations_removed.txt" \
+            --scenario-map "./quarantine-diff-results.txt" \
             --output quarantine_comment.md \
             --audit-json quarantine_audit.json \
             --inventory-json scenario_inventory.json \
