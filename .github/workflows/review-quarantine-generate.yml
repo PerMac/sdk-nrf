@@ -137,8 +137,6 @@ jobs:
             --removed-file "../quarantine-diff-results/configurations_removed.txt" \
             --scenario-map "./quarantine-diff-results.txt" \
             --output quarantine_comment.md \
-            --audit-json quarantine_audit.json \
-            --inventory-json scenario_inventory.json \
             --ref "${HEAD_SHA}" \
             --strict-missing-codeowners \
             --strict-flag-file strict_missing_codeowners.flag
@@ -159,7 +157,6 @@ jobs:
             ${{ runner.temp }}/diff_quarantine.txt
             base/quarantine_comment.md
             base/quarantine_audit.json
-            base/scenario_inventory.json
             base/strict_missing_codeowners.flag
             pr_number.txt
           if-no-files-found: ignore
