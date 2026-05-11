@@ -63,7 +63,7 @@
 - scenarios:
     - kmu.west.provision.verify_keys_in_app
   platforms:
-    - nrf54lm20dk/nrf54lm20b/cpuapp
+    - all
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39210"
 
 - scenarios:
