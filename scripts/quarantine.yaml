@@ -12,6 +12,7 @@
     - sample.benchmark.coremark.flash_and_run.nrf7120
   platforms:
     - nrf7120dk/nrf7120/cpuapp
+    - nrf9160dk@0.14.0/nrf9160/ns
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38741"
 
 - scenarios:
