@@ -114,7 +114,6 @@
     - drivers.uart.uart_latency.int_driven.fast
     - drivers.uart.uart_latency.poll.fast
   platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuflpr
     - nrf9251dk@0.1.0/nrf9251/cpuflpr/xip
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
 
