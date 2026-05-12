@@ -30,7 +30,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ env.HEAD_SHA }}
-          path: pr
+          path: pr/nrf
           fetch-depth: 0
 
       # Checkout the trusted base repo to run the notifier from trusted code
@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           ref: ${{ env.BASE_SHA }}
-          path: base
+          path: base/nrf
           fetch-depth: 1
 
       # Python setup & deps
@@ -61,8 +61,8 @@ jobs:
           tmpfile=$(mktemp)
 
           {
-            find ./pr/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
-            find ./base/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+            find ./pr/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
+            find ./base/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
           } \
           | sed -E 's#^\./(pr|base)/##' \
           | sort -u \
@@ -73,8 +73,8 @@ jobs:
 
           changed=()
           for rel in "${all_files[@]}"; do
-            b="base/$rel"
-            p="pr/$rel"
+            b="base/nrf/$rel"
+            p="pr/nrf/$rel"
 
             # affected if content differs
             if ! cmp -s "$b" "$p"; then
@@ -113,7 +113,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 base/scripts/compare_quarantine.py "base/$rel" "pr/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+            python3 base/scripts/compare_quarantine.py "base/nrf/$rel" "pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
 
@@ -155,9 +155,9 @@ jobs:
           name: quarantine-artifacts-pr${{ env.PR_NUMBER }}-sha${{ env.HEAD_SHA }}
           path: |
             ${{ runner.temp }}/diff_quarantine.txt
-            base/quarantine_comment.md
-            base/quarantine_audit.json
-            base/strict_missing_codeowners.flag
+            base/nrf/quarantine_comment.md
+            base/nrf/quarantine_audit.json
+            base/nrf/strict_missing_codeowners.flag
             pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
@@ -166,9 +166,9 @@ jobs:
       - name: Fail if strict violation (missing CODEOWNERS)
         shell: bash
         run: |
-          if [[ -f base/strict_missing_codeowners.flag ]]; then
+          if [[ -f base/nrf/strict_missing_codeowners.flag ]]; then
             echo "Strict mode: Missing CODEOWNERS detected. Failing the job."
-            cat base/strict_missing_codeowners.flag
+            cat base/nrf/strict_missing_codeowners.flag
             exit 1
           else
             echo "Strict mode: no violations."
