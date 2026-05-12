@@ -26,6 +26,7 @@ import argparse
 import ast
 import json
 import os
+import pathspec
 import re
 import sys
 from collections.abc import Iterable
@@ -106,42 +107,20 @@ def load_codeowners(repo_root: Path) -> list[tuple[str, list[str]]]:
     return rules
 
 
-def codeowners_pattern_to_regex(pattern: str) -> re.Pattern:
-    anchored = pattern.startswith("/")
-    pat = pattern[1:] if anchored else pattern
-
-    # Globstar support and wildcard normalization
-    pat = pat.replace("**/", "__GLOBSTAR_DIR__/")
-    pat = pat.replace("/**", "/__GLOBSTAR_TAIL__")
-    pat = pat.replace("**", "__GLOBSTAR__")
-
-    pat = re.escape(pat)
-    pat = pat.replace("__GLOBSTAR_DIR__", ".*")
-    pat = pat.replace("__GLOBSTAR_TAIL__", ".*")
-    pat = pat.replace("__GLOBSTAR__", ".*")
-    pat = pat.replace(r"\*", r"[^/]*").replace(r"\?", r"[^/]")
-
-    if pattern.endswith("/"):
-        pat += ".*"
-
-    if anchored:
-        return re.compile("^" + pat + "$")
-    else:
-        # Match anywhere within a path segment boundary
-        return re.compile(r"(^|.*/)" + pat + r"($|/.*)")
+def compile_pathspecs(rules):
+    compiled = []
+    for pattern, owners in rules:
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", [pattern])
+        compiled.append((spec, owners))
+    return compiled
 
 
-def owners_for_path(path: str, rules: list[tuple[str, list[str]]]) -> list[str]:
-    matched: list[str] | None = None
-    for pat, owners in rules:
-        if codeowners_pattern_to_regex(pat).search(path):
-            matched = owners  # LAST match wins
-    return matched or []
-
-
-# ---------------- Pattern expansion (legacy, kept untouched) ----------------
-def compile_rx(pattern: str) -> re.Pattern:
-    return re.compile(pattern + r"\Z")  # full-match semantics
+def find_owners(filepath: str, compiled_specs: list[tuple[str, list[str]]]) -> set[str]:
+    matched_owners = set()
+    for spec, owners in compiled_specs:
+        if spec.match_file(filepath):
+            matched_owners = owners
+    return matched_owners
 
 
 # ---------------- Comment formatting ----------------
@@ -272,7 +251,7 @@ def make_comment(
 def resolve_codeowners_for_scenarios(
     scenario_to_paths: dict[str, set[str]],
     scenarios: Iterable[str],
-    codeowners_rules: list[tuple[str, list[str]]],
+    compiled_specs: list[tuple[pathspec.PathSpec, list[str]]],
 ) -> tuple[dict[str, list[tuple[str, str]]], list[tuple[str, str]]]:
     owners_map: dict[str, list[tuple[str, str]]] = {}
     unowned: list[tuple[str, str]] = []
@@ -280,15 +259,19 @@ def resolve_codeowners_for_scenarios(
     for scen in scenarios:
         # find-my is not part of nrf, has no codeowners and repo with scenario YAMLs is private
         if FIND_MY in scen:
-            owners = ["@ncs-si-bluebagel"]  
+            owners = ["@nrfconnect/ncs-si-bluebagel"]  
         else:
-            path = scenario_to_paths.get(scen, set())
-            owners = owners_for_path(path, codeowners_rules)
+            path_full = scenario_to_paths.get(scen, set())
+            path_prefix, path = path_full.split("/", 1)
+            if path_prefix != "nrf":
+                owners = ["@nrfconnect/ncs-code-owners"]  # No codeowners for scenarios outside nrf/
+            else:
+                owners = find_owners(path, compiled_specs)
         if not owners:
-            unowned.append((scen, path))
+            unowned.append((scen, path_full))
             continue
         key = ",".join(sorted(set(owners), key=str.lower))
-        owners_map.setdefault(key, []).append((scen, path))
+        owners_map.setdefault(key, []).append((scen, path_full))
 
     return owners_map, unowned
 
@@ -331,7 +314,6 @@ def load_scenario_map(path: Path) -> dict[str, set[str]]:
     """
     map = {}
     with open(path, 'r') as f:
-        scenario_map: dict[str, set[str]] = {}
         for line in f:
             s = line.strip()
             scen, loc = s.split(":")
@@ -361,7 +343,8 @@ def main() -> int:
     removed_cfg = load_configurations(removed_path)
 
     scenario_map = load_scenario_map(args.scenario_map)
-    code_rules = load_codeowners(root)
+    rules = load_codeowners(root)
+    compiled_specs = compile_pathspecs(rules)
 
     # Build scenario -> platforms maps and platform-only sets
     scenario_to_added_platforms: dict[str, set[str]] = {}
@@ -390,10 +373,10 @@ def main() -> int:
 
     # expanded_add/del replace with list from input
     owned_add, unowned_add = resolve_codeowners_for_scenarios(
-        scenario_map, scenario_to_added_platforms, code_rules
+        scenario_map, scenario_to_added_platforms, compiled_specs
     )
     owned_del, unowned_del = resolve_codeowners_for_scenarios(
-        scenario_map, scenario_to_removed_platforms, code_rules
+        scenario_map, scenario_to_removed_platforms, compiled_specs
     )
 
 
