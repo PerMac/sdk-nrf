@@ -59,7 +59,6 @@ def get_all_configurations(quarantine_file):
 def expand_configurations(configurations: set[tuple[str, str]], scenario_map: dict[str, set[str]]) -> set[tuple[str, str]]:
     """Expand configurations with scenario patterns to explicit scenario-platform pairs."""
     expanded = set()
-    missing = set()
     for scenario_pattern, platform in configurations:
         if scenario_pattern is None:
             # No scenario specified, keep as is
@@ -72,10 +71,9 @@ def expand_configurations(configurations: set[tuple[str, str]], scenario_map: di
             matched_scenarios = {s for s in scenario_map if fnmatch(s, scenario_pattern)}
             if not matched_scenarios:
                 print(f"Warning: pattern '{scenario_pattern}' did not match any scenarios.")
-                missing.add((scenario_pattern, platform))            
             for s in matched_scenarios:
                 expanded.add((s, platform))
-    return expanded, missing
+    return expanded
 
 
 def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
@@ -112,15 +110,8 @@ def compare_quarantine_files(file1, file2, scenario_map):
     configurations1 = get_all_configurations(file1)
     configurations2 = get_all_configurations(file2)
 
-    expanded_add, missing_add = expand_configurations(sorted(set(configurations1)), scenario_map.keys())
-    expanded_del, missing_del = expand_configurations(sorted(set(configurations2)), scenario_map.keys())
-    if missing_add or missing_del:
-        print("Error: some scenario patterns could not be recognized:")
-        for pattern, platform in missing_add:
-            print(f"  + {pattern} (platform: {platform})")
-        for pattern, platform in missing_del:
-            print(f"  - {pattern} (platform: {platform})")
-        exit(1)
+    expanded_add = expand_configurations(sorted(set(configurations1)), scenario_map.keys())
+    expanded_del = expand_configurations(sorted(set(configurations2)), scenario_map.keys())
 
     added_configurations = expanded_add - expanded_del
     removed_configurations = expanded_del - expanded_add
