@@ -73,8 +73,8 @@ jobs:
 
           changed=()
           for rel in "${all_files[@]}"; do
-            b="base/nrf/$rel"
-            p="pr/nrf/$rel"
+            b="base/$rel"
+            p="pr/$rel"
 
             # affected if content differs
             if ! cmp -s "$b" "$p"; then
