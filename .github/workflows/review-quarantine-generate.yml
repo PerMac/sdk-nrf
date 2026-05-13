@@ -100,11 +100,11 @@ jobs:
         id: compare_quarantine
         run: |
           set -euo pipefail
-          echo "west init -l ./base"
-          west init -l ./base
+          echo "west init -l ./base/nrf"
+          west init -l ./base/nrf
           echo "update zephyr --narrow"
           west update zephyr --narrow
-          export ZEPHYR_BASE="zephyr"
+          export ZEPHYR_BASE="base/zephyr"
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
 
@@ -113,7 +113,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 base/scripts/compare_quarantine.py "base/nrf/$rel" "pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+            python3 base/nrf/scripts/compare_quarantine.py "base/nrf/$rel" "pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
 
