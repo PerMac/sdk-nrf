@@ -98,13 +98,14 @@ jobs:
       - name: Compare only affected quarantine YAMLs (base vs PR)
         shell: bash
         id: compare_quarantine
+        working-directory: base
         run: |
           set -euo pipefail
-          echo "west init -l ./base/nrf"
-          west init -l ./base/nrf
+          echo "west init -l ./nrf"
+          west init -l ./nrf
           echo "update zephyr --narrow"
           west update zephyr --narrow
-          export ZEPHYR_BASE="base/zephyr"
+          export ZEPHYR_BASE="zephyr"
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
 
@@ -113,7 +114,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 base/nrf/scripts/compare_quarantine.py "base/nrf/$rel" "pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+            python3 nrf/scripts/compare_quarantine.py "nrf/$rel" "../pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
 
@@ -127,7 +128,7 @@ jobs:
 
       # Run notifier script from base repo
       - name: Prepare comment body
-        working-directory: base
+        working-directory: base/nrf
         run: |
           set -euo pipefail
           export ZEPHYR_BASE="../zephyr"
