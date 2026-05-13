@@ -114,7 +114,7 @@ jobs:
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 nrf/scripts/compare_quarantine.py "nrf/$rel" "../pr/nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+            python3 nrf/scripts/compare_quarantine.py "$rel" "../pr/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
 
