@@ -4,3 +4,11 @@
 # To have an empty list use:
 # - scenarios:
 #     - None
+
+- scenarios:
+    - sample.benchmark.coremark.*
+  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38741"
+
+- platforms:
+    - native_sim/native
+  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39126"
