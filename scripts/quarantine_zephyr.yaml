@@ -11,6 +11,10 @@
     - nrf52840dk/nrf52840
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-24923"
 
+- platforms:
+    - nrf5340dk/nrf5340/cpuapp
+  comment: "TEST"
+
 - scenarios:
     - display.cfb.basic.mono01
     - display.cfb.basic.mono01.lsbfirst
@@ -232,6 +236,10 @@
     - nrf5340dk/nrf5340/cpuapp
     - nrf9160dk@0.14.0/nrf9160
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38955"
+
+- scenarios:
+    - kernel.lifo.usage
+  comment: "TEST"
 
 - scenarios:
     - wifi.build.ap
