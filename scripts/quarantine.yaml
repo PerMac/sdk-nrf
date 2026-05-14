@@ -8,6 +8,10 @@
     - nrf52840dk/nrf52840
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-29460"
 
+- platforms:
+    - nrf54h20dk@0.9.0/nrf54h20/cpurad
+  comment: "TEST"
+
 - scenarios:
     - sample.benchmark.coremark.flash_and_run.nrf7120
   platforms:
@@ -155,6 +159,10 @@
     - nrf9251dk@0.1.0/nrf9251/cpuapp
     - nrf9251dk@0.1.0/nrf9251/cpuppr
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
+
+- scenarios:
+    - crypto.cracen
+  comment: "TEST"
 
 - scenarios:
     - nrf.extended.boards.nrf.mram_latency
