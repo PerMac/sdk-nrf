@@ -125,7 +125,8 @@ def find_owners(filepath: str, compiled_specs: list[tuple[str, list[str]]]) -> s
 
 # ---------------- Comment formatting ----------------
 COMMENT_MARKER = "<!-- quarantine-notifier -->"
-ALL_PLATFORMS_TOKEN = "__ALL__"
+ALL_PLATFORMS_TOKEN = "__ALL_PLATFORMS__"
+ALL_SCENARIOS_TOKEN = "__ALL_SCENARIOS__"
 
 
 def make_comment(
@@ -179,8 +180,12 @@ def make_comment(
             plat_str = (
                 "all platforms"
                 if ALL_PLATFORMS_TOKEN in plats
-                else ", ".join(sorted(plats)) if plats else "-"
+                else ", ".join(sorted(plats))
             )
+
+            if scen == ALL_SCENARIOS_TOKEN:
+                scen = "all scenarios"
+                
             add_lines.append(
                 f"- **Added to quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
             )
@@ -190,8 +195,12 @@ def make_comment(
             plat_str = (
                 "all platforms"
                 if ALL_PLATFORMS_TOKEN in plats
-                else ", ".join(sorted(plats)) if plats else "-"
+                else ", ".join(sorted(plats))
             )
+
+            if scen == ALL_SCENARIOS_TOKEN:
+                scen = "all scenarios"
+
             del_lines.append(
                 f"- **Removed from quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
             )
@@ -259,7 +268,9 @@ def resolve_codeowners_for_scenarios(
     for scen in scenarios:
         # find-my is not part of nrf, has no codeowners and repo with scenario YAMLs is private
         if FIND_MY in scen:
-            owners = ["@nrfconnect/ncs-si-bluebagel"]  
+            owners = ["@nrfconnect/ncs-si-bluebagel"]
+        elif ALL_SCENARIOS_TOKEN in scen:
+            owners = ["@nrfconnect/ncs-test-leads"]  # Full platform quarantine, assign to all test leads
         else:
             path_full = scenario_to_paths.get(scen, set())
             path_prefix, path = path_full.split("/", 1)
