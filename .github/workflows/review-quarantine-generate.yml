@@ -146,7 +146,6 @@ jobs:
           fi
 
       - name: Upload quarantine scenario diff artifacts
-        if: ${{ hashFiles('quarantine-diff-results/*.txt') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: quarantine-scenario-diff
@@ -181,7 +180,6 @@ jobs:
           name: quarantine-artifacts-pr${{ env.PR_NUMBER }}-sha${{ env.HEAD_SHA }}
           path: |
             base/nrf/quarantine_comment.md
-            base/quarantine-diff-results
             pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
