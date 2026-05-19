@@ -134,8 +134,8 @@ jobs:
           shopt -s nullglob
 
 
-          added_files=("$OUTDIR"/quarantine_added_*.txt)
-          removed_files=("$OUTDIR"/quarantine_removed_*.txt)
+          added_files=("$OUTDIR"/quarantine_added*.txt)
+          removed_files=("$OUTDIR"/quarantine_removed*.txt)
 
           if (( ${#added_files[@]} )); then
             cat "${added_files[@]}" > "$added_out"
@@ -149,7 +149,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quarantine-scenario-diff
-          path: quarantine-diff-results/*.txt
+          path: base/quarantine-diff-results/*.txt
           if-no-files-found: warn
 
       # Run notifier script from base repo
