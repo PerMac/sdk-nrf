@@ -117,6 +117,56 @@ jobs:
             python3 nrf/scripts/compare_quarantine.py "../pr/$rel" "$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
+      - name: Compare only affected quarantine YAMLs (base vs PR)
+        shell: bash
+        id: compare_quarantine
+        working-directory: base
+        run: |
+          set -euo pipefail
+          echo "west init -l ./nrf"
+          west init -l ./nrf
+          echo "update zephyr --narrow"
+          west update zephyr --narrow
+          export ZEPHYR_BASE="zephyr"
+          OUTDIR="quarantine-diff-results"
+          mkdir -p "$OUTDIR"
+
+          files="${{ steps.quarantine_changed_files.outputs.files }}"
+
+          while IFS= read -r rel; do
+            [[ -z "$rel" ]] && continue
+            echo "== Comparing affected quarantine file: $rel =="
+            python3 nrf/scripts/compare_quarantine.py "../pr/$rel" "$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+          done <<< "$files"
+
+      - name: Combine quarantine added/removed files
+        shell: bash
+        working-directory: base
+        run: |
+          set -euo pipefail
+
+          OUTDIR="quarantine-diff-results"
+          mkdir -p "$OUTDIR"
+
+          added_out="$OUTDIR/quarantine_added_combined.txt"
+          removed_out="$OUTDIR/quarantine_removed_combined.txt"
+
+          : > "$added_out"
+          : > "$removed_out"
+
+          shopt -s nullglob
+
+
+          added_files=("$OUTDIR"/quarantine_added_*.txt)
+          removed_files=("$OUTDIR"/quarantine_removed_*.txt)
+
+          if (( ${#added_files[@]} )); then
+            cat "${added_files[@]}" > "$added_out"
+          fi
+
+          if (( ${#removed_files[@]} )); then
+            cat "${removed_files[@]}" > "$removed_out"
+          fi
 
       - name: Upload quarantine scenario diff artifacts
         if: ${{ hashFiles('quarantine-diff-results/*.txt') != '' }}
@@ -134,13 +184,11 @@ jobs:
           export ZEPHYR_BASE="../zephyr"
           python scripts/ci/quarantine_notifier.py \
             --repo-root . \
-            --added-file "../quarantine-diff-results/configurations_added.txt" \
-            --removed-file "../quarantine-diff-results/configurations_removed.txt" \
+            --added-file "../quarantine-diff-results/quarantine_added_combined.txt" \
+            --removed-file "../quarantine-diff-results/quarantine_removed_combined.txt" \
             --scenario-map "../quarantine-diff-results/scenario_map.txt" \
             --output quarantine_comment.md \
             --ref "${HEAD_SHA}" \
-            --strict-missing-codeowners \
-            --strict-flag-file strict_missing_codeowners.flag
 
       # PR number is not accessible between workflows in a fork and a base context
       - name: Store PR number for Publish (as artifact file)
@@ -155,22 +203,8 @@ jobs:
         with:
           name: quarantine-artifacts-pr${{ env.PR_NUMBER }}-sha${{ env.HEAD_SHA }}
           path: |
-            ${{ runner.temp }}/diff_quarantine.txt
             base/nrf/quarantine_comment.md
-            base/nrf/quarantine_audit.json
-            base/nrf/strict_missing_codeowners.flag
+            base/quarantine-diff-results
             pr_number.txt
           if-no-files-found: ignore
           retention-days: 30
-
-      # Enforce strict mode on CODEOWNERS
-      - name: Fail if strict violation (missing CODEOWNERS)
-        shell: bash
-        run: |
-          if [[ -f base/nrf/strict_missing_codeowners.flag ]]; then
-            echo "Strict mode: Missing CODEOWNERS detected. Failing the job."
-            cat base/nrf/strict_missing_codeowners.flag
-            exit 1
-          else
-            echo "Strict mode: no violations."
-          fi

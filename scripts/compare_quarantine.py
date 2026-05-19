@@ -63,7 +63,7 @@ def expand_configurations(configurations: set[tuple[str, str]], scenario_map: di
     for scenario_pattern, platform in configurations:
         if scenario_pattern is ALL_SCENARIOS_TOKEN:
             # No scenario specified, applies to all,leave token to resolve during comment creation
-            continue
+            expanded.add((scenario_pattern, platform))
         elif FIND_MY in scenario_pattern:
             # find-my scenarios are not part of nrf
             expanded.add((scenario_pattern, platform))
