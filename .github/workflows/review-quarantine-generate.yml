@@ -94,29 +94,6 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-
-      - name: Compare only affected quarantine YAMLs (base vs PR)
-        shell: bash
-        id: compare_quarantine
-        working-directory: base
-        run: |
-          set -euo pipefail
-          echo "west init -l ./nrf"
-          west init -l ./nrf
-          echo "update zephyr --narrow"
-          west update zephyr --narrow
-          export ZEPHYR_BASE="zephyr"
-          OUTDIR="quarantine-diff-results"
-          mkdir -p "$OUTDIR"
-
-          files="${{ steps.quarantine_changed_files.outputs.files }}"
-
-          while IFS= read -r rel; do
-            [[ -z "$rel" ]] && continue
-            echo "== Comparing affected quarantine file: $rel =="
-            python3 nrf/scripts/compare_quarantine.py "../pr/$rel" "$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
-          done <<< "$files"
-
       - name: Compare only affected quarantine YAMLs (base vs PR)
         shell: bash
         id: compare_quarantine
