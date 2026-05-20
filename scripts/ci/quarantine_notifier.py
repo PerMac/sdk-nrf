@@ -173,7 +173,7 @@ def make_comment(
                 scen = "all scenarios"
                 
             add_lines.append(
-                f"- **Added to quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
+                f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}"
             )
 
         for scen, path in sorted(owner_to_removed.get(key, [])):
@@ -188,7 +188,7 @@ def make_comment(
                 scen = "all scenarios"
 
             del_lines.append(
-                f"- **Removed from quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
+                f"- `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
             )
 
         section("Added", add_lines, lines)
