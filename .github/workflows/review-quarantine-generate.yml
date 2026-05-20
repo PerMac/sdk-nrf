@@ -122,27 +122,41 @@ jobs:
         run: |
           set -euo pipefail
 
-          OUTDIR="quarantine-diff-results"
-          mkdir -p "$OUTDIR"
+          DIR="./quarantine-diff-results"
+          OUT_ADDED="$DIR/configurations_added_combined.txt"
+          OUT_REMOVED="$DIR/configurations_removed_combined.txt"
 
-          added_out="$OUTDIR/quarantine_added_combined.txt"
-          removed_out="$OUTDIR/quarantine_removed_combined.txt"
-
-          : > "$added_out"
-          : > "$removed_out"
-
+          # Make globs expand to nothing instead of literal patterns when no match
           shopt -s nullglob
 
+          added_files=()
+          for f in "$DIR"/configurations_added*.txt; do
+            [[ "$f" == "$OUT_ADDED" ]] && continue
+            added_files+=("$f")
+          done
 
-          added_files=("$OUTDIR"/quarantine_added*.txt)
-          removed_files=("$OUTDIR"/quarantine_removed*.txt)
+          removed_files=()
+          for f in "$DIR"/configurations_removed*.txt; do
+            [[ "$f" == "$OUT_REMOVED" ]] && continue
+            removed_files+=("$f")
+          done
 
-          if (( ${#added_files[@]} )); then
-            cat "${added_files[@]}" > "$added_out"
+          # Combine (truncate outputs first)
+          : > "$OUT_ADDED"
+          : > "$OUT_REMOVED"
+
+          if (( ${#added_files[@]} > 0 )); then
+            cat "${added_files[@]}" >> "$OUT_ADDED"
+            echo "Wrote: $OUT_ADDED (from ${#added_files[@]} file(s))"
+          else
+            echo "No matching files for added: $DIR/configurations_added*.txt"
           fi
 
-          if (( ${#removed_files[@]} )); then
-            cat "${removed_files[@]}" > "$removed_out"
+          if (( ${#removed_files[@]} > 0 )); then
+            cat "${removed_files[@]}" >> "$OUT_REMOVED"
+            echo "Wrote: $OUT_REMOVED (from ${#removed_files[@]} file(s))"
+          else
+            echo "No matching files for removed: $DIR/configurations_removed*.txt"
           fi
 
       - name: Upload quarantine scenario diff artifacts
@@ -160,8 +174,8 @@ jobs:
           export ZEPHYR_BASE="../zephyr"
           python scripts/ci/quarantine_notifier.py \
             --repo-root . \
-            --added-file "../quarantine-diff-results/quarantine_added_combined.txt" \
-            --removed-file "../quarantine-diff-results/quarantine_removed_combined.txt" \
+            --added-file "../quarantine-diff-results/configurations_added_combined.txt" \
+            --removed-file "../quarantine-diff-results/configurations_removed_combined.txt" \
             --scenario-map "../quarantine-diff-results/scenario_map.txt" \
             --output quarantine_comment.md \
             --ref "${HEAD_SHA}" \
