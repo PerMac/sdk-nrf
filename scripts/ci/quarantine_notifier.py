@@ -188,7 +188,7 @@ def make_comment(
                 scen = "all scenarios"
 
             del_lines.append(
-                f"- `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
+                f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}"
             )
 
         section("Added", add_lines, lines)
