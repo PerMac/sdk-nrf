@@ -33,10 +33,13 @@ FIND_MY = "find_my"
 SCENARIO_YAML_GLOBS = [
     "**/samples/**/*/sample.yaml",
     "**/samples/**/*/testcase.yaml",
+    "**/samples/**/*/tests.yaml",
     "**/applications/**/*/sample.yaml",
     "**/applications/**/*/testcase.yaml",
+    "**/applications/**/*/tests.yaml",
     "**/tests/**/*/testcase.yaml",
     "**/tests/**/*/sample.yaml",
+    "**/tests/**/*/tests.yaml",
 ]
 
 def get_all_configurations(quarantine_file):
