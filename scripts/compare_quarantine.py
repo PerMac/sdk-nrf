@@ -26,16 +26,20 @@ except Exception:
     print("ERROR: PyYAML is required (pip install pyyaml).", file=sys.stderr)
     raise
 
-ALL_PLATFORMS_TOKEN = "__ALL__"
+ALL_PLATFORMS_TOKEN = "__ALL_PLATFORMS__"
+ALL_SCENARIOS_TOKEN = "__ALL_SCENARIOS__"
 FIND_MY = "find_my"
 
 SCENARIO_YAML_GLOBS = [
     "**/samples/**/*/sample.yaml",
     "**/samples/**/*/testcase.yaml",
+    "**/samples/**/*/tests.yaml",
     "**/applications/**/*/sample.yaml",
     "**/applications/**/*/testcase.yaml",
+    "**/applications/**/*/tests.yaml",
     "**/tests/**/*/testcase.yaml",
     "**/tests/**/*/sample.yaml",
+    "**/tests/**/*/tests.yaml",
 ]
 
 def get_all_configurations(quarantine_file):
@@ -46,7 +50,7 @@ def get_all_configurations(quarantine_file):
 
         for qelem in quarantine_data.qlist:
             # Add all configurations from this quarantine element
-            scenarios = qelem.scenarios if qelem.scenarios else [None]
+            scenarios = qelem.scenarios if qelem.scenarios else [ALL_SCENARIOS_TOKEN]
             platforms = qelem.platforms if qelem.platforms else [ALL_PLATFORMS_TOKEN]
             # Generate all possible pairs
             configurations.update(product(scenarios, platforms))
@@ -56,15 +60,14 @@ def get_all_configurations(quarantine_file):
         sys.exit(1)
 
 
-def expand_configurations(configurations: set[tuple[str, str]], scenario_map: dict[str, set[str]]) -> set[tuple[str, str]]:
+def expand_configurations(configurations: Iterable[tuple[str, str]], scenario_map: Iterable[str]) -> set[tuple[str, str]]:
     """Expand configurations with scenario patterns to explicit scenario-platform pairs."""
     expanded = set()
-    missing = set()
     for scenario_pattern, platform in configurations:
-        if scenario_pattern is None:
-            # No scenario specified, keep as is
-            expanded.add((None, platform))
-        if FIND_MY in scenario_pattern:
+        if scenario_pattern is ALL_SCENARIOS_TOKEN:
+            # No scenario specified, applies to all,leave token to resolve during comment creation
+            expanded.add((scenario_pattern, platform))
+        elif FIND_MY in scenario_pattern:
             # find-my scenarios are not part of nrf
             expanded.add((scenario_pattern, platform))
         else:
@@ -72,10 +75,9 @@ def expand_configurations(configurations: set[tuple[str, str]], scenario_map: di
             matched_scenarios = {s for s in scenario_map if fnmatch(s, scenario_pattern)}
             if not matched_scenarios:
                 print(f"Warning: pattern '{scenario_pattern}' did not match any scenarios.")
-                missing.add((scenario_pattern, platform))            
             for s in matched_scenarios:
                 expanded.add((s, platform))
-    return expanded, missing
+    return expanded
 
 
 def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
@@ -112,15 +114,8 @@ def compare_quarantine_files(file1, file2, scenario_map):
     configurations1 = get_all_configurations(file1)
     configurations2 = get_all_configurations(file2)
 
-    expanded_add, missing_add = expand_configurations(sorted(set(configurations1)), scenario_map.keys())
-    expanded_del, missing_del = expand_configurations(sorted(set(configurations2)), scenario_map.keys())
-    if missing_add or missing_del:
-        print("Error: some scenario patterns could not be recognized:")
-        for pattern, platform in missing_add:
-            print(f"  + {pattern} (platform: {platform})")
-        for pattern, platform in missing_del:
-            print(f"  - {pattern} (platform: {platform})")
-        exit(1)
+    expanded_add = expand_configurations(sorted(set(configurations1)), scenario_map.keys())
+    expanded_del = expand_configurations(sorted(set(configurations2)), scenario_map.keys())
 
     added_configurations = expanded_add - expanded_del
     removed_configurations = expanded_del - expanded_add

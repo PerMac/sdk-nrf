@@ -94,7 +94,7 @@ Added the following features as experimental:
     * Communication using either MQTT or CoAP over Wi-Fi.
     * Better out-of-box experience by using the new nRF Cloud Security Services :ref:`auto-onboarding feature <nrf_cloud_multi_service_provisioning_service>`.
       This makes it easier to connect a new device to nRF Cloud, including installation of security credentials.
-  * The :ref:`nrf_cloud_rest_device_message` sample also includes experimental support for the new nRF Cloud Security Services auto-onboarding feature.
+  * The Cellular: nRF Cloud REST Device Message sample also includes experimental support for the new nRF Cloud Security Services auto-onboarding feature.
 
 * Other:
 
@@ -105,7 +105,7 @@ Improved:
 
 * Bluetooth LE Audio:
 
-  * The application nRF5340 Audio is now called :ref:`nrf53_audio_app` and it has been refactored, expanded, and improved, using Nordic Semiconductor's :ref:`softdevice_controller` instead of the previous dedicated LE Audio Controller subsystem.
+  * The application nRF Audio is now called :ref:`nrf_audio_app` and it has been refactored, expanded, and improved, using Nordic Semiconductor's :ref:`softdevice_controller` instead of the previous dedicated LE Audio Controller subsystem.
     This application is still of experimental maturity.
 
 * Matter:
@@ -142,7 +142,7 @@ Supported modem firmware
 See `Modem firmware compatibility matrix`_ for an overview of which modem firmware versions have been tested with this version of the |NCS|.
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -517,7 +517,7 @@ nRF5340 Audio applications
 
   * LE Audio controller for nRF5340 from v3424 to v18929.
   * The default controller has been changed from the LE Audio controller for nRF5340 library to the :ref:`ug_ble_controller_softdevice`.
-    See the :ref:`nRF5340 Audio applications <nrf5340_audio_migration_notes>` section in the :ref:`migration_2.6` for information about how this affects your application.
+    See the :ref:`nRF Audio applications <nrf_audio_migration_notes>` section in the :ref:`migration_2.6` for information about how this affects your application.
   * Sending of the ISO data, which is now done in a single file :file:`bt_le_audio_tx`.
   * Application structure, which is now split into four separate, generic applications with separate :file:`main.c` files.
   * Advertising process by reverting back to slower advertising after a short burst (1.28 s) of directed advertising.
@@ -757,7 +757,7 @@ Cellular samples
 
   * Removed the nRF7002 EK devicetree overlay file :file:`nrf91xxdk_with_nrf7002ek.overlay`, because UART1 is disabled through the shield configuration.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Added credential check before connecting to the network.
   * Updated:
@@ -765,7 +765,7 @@ Cellular samples
     * The sample now uses the functions in the :file:`nrf_cloud_fota_poll.c` and :file:`nrf_cloud_fota_common.c` files.
     * The :kconfig:option:`CONFIG_AT_HOST_STACK_SIZE` Kconfig option value has been increased to 2048 bytes since nRF Cloud credentials are sometimes longer than 1024 bytes.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Added:
 
@@ -807,7 +807,7 @@ Cellular samples
     * The eDRX cycle to 5.12 s for both LTE-M and NB-IoT.
     * The periodic TAU (RPTAU) to 12 hours.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Updated:
 
@@ -865,7 +865,7 @@ Matter samples
 * :ref:`matter_lock_sample` sample:
 
   * Added support for Wi-Fi firmware patch upgrade on external memory, only for the combination of the nRF5340 DK with the nRF7002 EK.
-  * Updated the design of the :ref:`matter_lock_sample_wifi_thread_switching` feature so that support for both Matter over Thread and Matter over Wi-Fi is included in a single firmware image.
+  * Updated the design of the Thread and Wi-Fi switching section feature so that support for both Matter over Thread and Matter over Wi-Fi is included in a single firmware image.
   * Fixed an issue that prevented nRF Toolbox for iOS in version 5.0.9 from controlling the sample using :ref:`nus_service_readme`.
 
 Networking samples
@@ -1242,7 +1242,7 @@ Libraries for networking
 
     * The cbor code has been regenerated with zcbor 0.8.1 and adapted to API changes in zcbor 0.8.x.
 
-* :ref:`lib_nrf_cloud_log` library:
+* nRF Cloud Logging library library:
 
   * Added:
 
@@ -1270,7 +1270,7 @@ Libraries for networking
 
     * Support for the :ref:`TLS Credentials Subsystem <zephyr:sockets_tls_credentials_subsys>` by selecting the :kconfig:option:`CONFIG_NRF_CLOUD_CREDENTIALS_MGMT_TLS_CRED` Kconfig option.
       This is applicable to the :kconfig:option:`CONFIG_NRF_CLOUD_CHECK_CREDENTIALS` and :kconfig:option:`CONFIG_NRF_CLOUD_PROVISION_CERTIFICATES` Kconfig options.
-    * The :file:`nrf_cloud_fota_poll.c` file to consolidate the FOTA polling code from the :ref:`nrf_cloud_multi_service` and :ref:`nrf_cloud_rest_fota` samples.
+    * The :file:`nrf_cloud_fota_poll.c` file to consolidate the FOTA polling code from the :ref:`nrf_cloud_multi_service` and Cellular: nRF Cloud REST FOTA samples.
     * The :file:`nrf_cloud_fota_poll.h` file.
 
   * Updated:
@@ -1321,9 +1321,9 @@ Libraries for networking
     * The functions :c:func:`fota_download` and :c:func:`fota_download_any` that can accept a security tag list and security tag count as arguments instead of a single security tag.
     * :c:enumerator:`FOTA_DOWNLOAD_ERROR_CAUSE_CONNECT_FAILED` as a potential error cause in  :c:enumerator:`FOTA_DOWNLOAD_EVT_ERROR` events.
 
-* :ref:`lib_nrf_cloud_rest` library:
+* nRF Cloud REST library:
 
-  * Updated the :c:struct:`nrf_cloud_rest_location_request` structure to accept a pointer to a :c:struct:`nrf_cloud_location_config` structure in place of the single ``disable_response`` flag.
+  * Updated the ``nrf_cloud_rest_location_request`` structure to accept a pointer to a :c:struct:`nrf_cloud_location_config` structure in place of the single ``disable_response`` flag.
 
 * Wi-Fi credentials library:
 

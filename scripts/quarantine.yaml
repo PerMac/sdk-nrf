@@ -22,46 +22,6 @@
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38328"
 
 - scenarios:
-    - benchmarks.current_consumption.beacon_idle.nrf54l
-    - benchmarks.current_consumption.beacon_idle.nrf54l.lfrc
-    - benchmarks.current_consumption.beacon_vs_vdd
-    - benchmarks.current_consumption.beacon_vs_vdd.nrf54l_lfrc
-    - sample.bluetooth.peripheral_power_profiling
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_0dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_0dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_8dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_8dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_0dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_0dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_8dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_8dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_non_conn_advert_lfxo_0dbm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_non_conn_advert_lfxo_0dbm_30ms
-    - sample.bluetooth.peripheral_power_profiling.console_log
-  platforms:
-    - nrf54ls05dk@0.2.0/nrf54ls05a/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38475"
-
-- scenarios:
-    - sample.bluetooth.peripheral_lbs
-    - sample.bluetooth.peripheral_lbs_no_security
-    - sample.bluetooth.peripheral_power_profiling
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_0dBm_100ms.54h
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_0dBm_30ms.54h
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_8dBm_100ms.54h
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfrc_8dBm_30ms.54h
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_0dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_0dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_8dBm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_conn_advert_lfxo_8dBm_30ms
-    - sample.bluetooth.peripheral_power_profiling.auto_non_conn_advert_lfxo_0dbm_100ms
-    - sample.bluetooth.peripheral_power_profiling.auto_non_conn_advert_lfxo_0dbm_30ms
-    - sample.bluetooth.peripheral_power_profiling.console_log
-  platforms:
-    - nrf54h20dk@0.9.0/nrf54h20/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39126"
-
-- scenarios:
     - kmu.west.provision.verify_keys_in_app
   platforms:
     - nrf54lm20dk/nrf54lm20b/cpuapp
@@ -86,29 +46,6 @@
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39226"
 
 - scenarios:
-    - nrf.extended.sample.drivers.mbox.nrf9251_app_flpr
-    - nrf.extended.sample.drivers.mbox.nrf9251_app_ppr
-  platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9403"
-
-- scenarios:
-    - drivers.audio.pdm_loopback.nrf54h20.1000khz
-    - drivers.audio.pdm_loopback.nrf54h20.1600khz
-    - drivers.audio.pdm_loopback.nrf54h20.no_dmm
-    - drivers.audio.pdm_loopback.nrf9251.audiopll.44k1hz
-    - drivers.audio.pdm_loopback.nrf9251.audiopll.48khz
-  platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuapp
-
-- scenarios:
-    - drivers.spim_latency_16Mbps_fast_loopback
-  platforms:
-    - nrf9251dk/nrf9251/cpuapp
-    - nrf9251dk@0.1.0/nrf9251/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9468"
-
-- scenarios:
     - drivers.uart.uart_fifo_flush.fast
     - drivers.uart.uart_latency.async.fast
     - drivers.uart.uart_latency.int_driven.fast
@@ -125,6 +62,16 @@
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
 
 - scenarios:
+    - nrf.extended.drivers.uart.async_dual
+    - nrf.extended.drivers.uart.async_dual.busy_sim
+    - nrf.extended.drivers.uart.async_dual.pm_runtime
+    - nrf.extended.drivers.uart.async_dual.pm_runtime.busy_sim
+    - nrf.extended.drivers.uart.async_dual.pm_runtime.explicit
+  platforms:
+    - nrf9251dk@0.1.0/nrf9251/cpuppr
+  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9628"
+
+- scenarios:
     - nrf.extended.kernel.common.timing
   platforms:
     - nrf9251dk@0.1.0/nrf9251/cpuppr
@@ -132,36 +79,12 @@
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
 
 - scenarios:
-    - nrf.extended.sample.boards.nrf.clock_control.audiopll
-    - nrf.extended.sample.boards.nrf.clock_control.cpuapp_hsfll
-    - nrf.extended.sample.boards.nrf.clock_control.fll16m
     - nrf.extended.sample.boards.nrf.clock_control.global_hsfll
     - nrf.extended.sample.boards.nrf.clock_control.global_hsfll.req_low_freq_n
     - nrf.extended.sample.boards.nrf.clock_control.lfclk
-    - nrf.extended.sample.boards.nrf.clock_control.uart133
-    - drivers.spim_pan
   platforms:
     - nrf9251dk@0.1.0/nrf9251/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
-
-- scenarios:
-    - nrf.extended.drivers.uart.async_dual
-    - nrf.extended.drivers.uart.async_dual.busy_sim
-    - nrf.extended.drivers.uart.async_dual.no_tx_chopped
-    - nrf.extended.drivers.uart.async_dual.pm_runtime
-    - nrf.extended.drivers.uart.async_dual.pm_runtime.busy_sim
-    - nrf.extended.drivers.uart.async_dual.pm_runtime.explicit
-  platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuapp
-    - nrf9251dk@0.1.0/nrf9251/cpuppr
-  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
-
-- scenarios:
-    - nrf.extended.boards.nrf.mram_latency
-  platforms:
-    - nrf9251dk/nrf9251/cpuapp
-    - nrf9251dk@0.1.0/nrf9251/cpuapp
-  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9454"
 
 - scenarios:
     - nrf.extended.drivers.gpio.get_direction
@@ -171,58 +94,39 @@
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
 
 - scenarios:
-    - benchmarks.early_logging
-    - drivers.adc.adc_sequence
-    - drivers.counter.alarm
-    - drivers.flash.multicore_soc_flash
-    - drivers.grtc.test_grtc_after_reset_pin
-    - drivers.hwinfo.reset_cause
-    - drivers.i2c.rtio_loopback
-    - drivers.pwm.pwm_events
-    - drivers.spi.bitbang
-    - drivers.spi.spim_mosi_toggles.slow
-    - drivers.timer.grtc_multiple_access
-    - drivers.timer.grtc_timer_lfrc.nrf54h
-    - drivers.watchdog
-    - drivers.watchdog.cpu_lockup_reset.h20
-    - drivers.watchdog.soft_reset.h20
-    - drivers.watchdog.wdt_variables.default
-    - nrf.extended.sample.basic.blinky
-    - nrf.extended.sample.drivers.adc.adc_dt
-    - subsys.west_debug.normal
-    - subsys.west_debug.thread_info
-    - subsys.west_flash
+    - drivers.gpio.gpio_nfct
+  platforms:
+    - nrf7120dk/nrf7120/cpuapp
+  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39364"
+
+- scenarios:
+    - nrf.extended.sample.ipc.icmsg.nrf54h_nrf92_no_multithreading
+    - drivers.grtc.test_mcuboot_grtc_no_uninit
+    - drivers.grtc.test_mcuboot_grtc_uninit
   platforms:
     - nrf9251dk@0.1.0/nrf9251/cpuapp
-  comment: "Missing modem support"
+  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9465"
 
 - scenarios:
-    - drivers.counter.basic_api
-    - drivers.watchdog.wdt_instances
-    - nrf.extended.drivers.watchdog.wdt_variables.default
-    - subsys.west_debug.normal
-    - subsys.west_debug.thread_info
-    - subsys.west_flash
+    - sample.benchmarks.peripheral_stress_test.nrf54lv10_lc10
+    - benchmarks.current_consumption.beacon_vs_vdd
+    - benchmarks.current_consumption.beacon_vs_vdd.nrf54l_lfrc
+    - benchmarks.current_consumptaion.beacon_idle.nrf54l.lfrc
+    - benchmarks.peripheral_stress_test.nrf54lv10_lc10.mcuboot
+    - benchmarks.current_consumption.beacon_idle.nrf54l
+    - benchmarks.peripheral_stress_test.nrf54lv10_lc10.mcuboot.lto
   platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuflpr
+    - nrf54lc10dk@0.8.0/nrf54lc10a/cpuapp
+  comment: "no MPSL for nrf54lc10 at the moment"
+
+- scenarios:
+    - nrf.extended.drivers.counter.basic_api
+  platforms:
     - nrf9251dk@0.1.0/nrf9251/cpuflpr/xip
-    - nrf9251dk@0.1.0/nrf9251/cpuppr/xip
-  comment: "Missing modem support"
+  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9630"
 
 - scenarios:
-    - drivers.spi.spim_instances
-    - drivers.watchdog.wdt_instances
-    - drivers.adc.accuracy.ref_volt.nrf9251
-    - drivers.adc
-    - drivers.adc_error_cases
-    - drivers.counter.basic_api
-    - drivers.counter.nrf_rtc
-    - drivers.watchdog.wdt_variables.default
-    - drivers.counter.alarm
-    - drivers.i2c.rtio_loopback
-    - subsys.west_debug.normal
-    - subsys.west_debug.thread_info
-    - subsys.west_flash
+    - drivers.timer.grtc_timer_lfrc.nrf54h
   platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuppr
-  comment: "Missing modem support"
+    - nrf9251dk@0.1.0/nrf9251/cpuapp
+  comment: "https://nordicsemi.atlassian.net/browse/NRFX-9631"

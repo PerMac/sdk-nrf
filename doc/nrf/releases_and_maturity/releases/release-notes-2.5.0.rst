@@ -120,7 +120,7 @@ Supported modem firmware
 See `Modem firmware compatibility matrix`_ for an overview of which modem firmware versions have been tested with this version of the |NCS|.
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -415,7 +415,7 @@ nRF5340 Audio
   * Content Control - This module handles content control, such as play and pause.
 
 * Added back the QDID number for the LE Audio controller for nRF5340 to the documentation.
-* Updated the :ref:`application documentation <nrf53_audio_app>` by splitting it into several pages.
+* Updated the :ref:`application documentation <nrf_audio_app>` by splitting it into several pages.
 
 nRF Machine Learning (Edge Impulse)
 -----------------------------------
@@ -564,7 +564,7 @@ Cellular samples (renamed from nRF9160 samples)
   * Renamed Cellular: nRF Cloud MQTT multi-service to :ref:`nrf_cloud_multi_service`.
   * Added:
 
-    * Documentation for using the nRF Cloud Alert and :ref:`lib_nrf_cloud_log` libraries.
+    * Documentation for using the nRF Cloud Alert and nRF Cloud Logging library libraries.
     * The :file:`overlay_coap.conf` file and made changes to the sample to enable the use of CoAP instead of MQTT to connect with nRF Cloud.
     * An overlay that allows the sample to be used with Wi-Fi instead of LTE (MQTT only).
     * Reporting of device and connection info to the device shadow.
@@ -606,13 +606,13 @@ Cellular samples (renamed from nRF9160 samples)
 
   * Updated the TF-M Mbed TLS overlay to fix an issue when connecting to the server.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Added:
 
-    * The ``disable_response`` parameter to the :c:struct:`nrf_cloud_rest_location_request` structure.
-      If set to true, no location data is returned to the device when the :c:func:`nrf_cloud_rest_location_get` function is called.
-    * A Kconfig option :kconfig:option:`CONFIG_REST_CELL_LOCATION_SAMPLE_VERSION` for the sample version.
+    * The ``disable_response`` parameter to the ``nrf_cloud_rest_location_request`` structure.
+      If set to true, no location data is returned to the device when the ``nrf_cloud_rest_location_get`` function is called.
+    * A Kconfig option ``CONFIG_REST_CELL_LOCATION_SAMPLE_VERSION`` for the sample version.
     * Reporting of device and connection info to the device shadow.
 
   * Updated the sample to print its version when started.
@@ -665,11 +665,11 @@ Cellular samples (renamed from nRF9160 samples)
   * Added support for nRF91x1 factory almanac.
     The new almanac file format also supports QZSS satellites.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Added reporting of device and connection info to the device shadow.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Added:
 
@@ -840,7 +840,7 @@ Binary libraries
 
 * LE Audio controller for nRF5340 library:
 
-  * Added a limitation about the lack of support for the +20 dBm setting when :ref:`building the nRF5340 Audio application with the nRF21540 FEM support <nrf53_audio_app_adding_FEM_support>`.
+  * Added a limitation about the lack of support for the +20 dBm setting when :ref:`building the nRF Audio application with the nRF21540 FEM support <nrf_audio_app_adding_FEM_support>`.
 
 * :ref:`liblwm2m_carrier_readme` library:
 
@@ -980,7 +980,7 @@ Libraries for networking
   * :ref:`lib_nrf_provisioning` library for device provisioning.
   * :ref:`lib_nrf_cloud_coap` library for accessing nRF Cloud services using CoAP.
 
-* :ref:`lib_nrf_cloud_log` library:
+* nRF Cloud Logging library library:
 
   * Added:
 
@@ -1032,9 +1032,9 @@ Libraries for networking
     * ``nrf_cloud_location_request_msg_json_encode()`` function and replaced with :c:func:`nrf_cloud_obj_location_request_create`.
     * ``nrf_cloud_location_req_json_encode()`` internal codec function.
 
-* :ref:`lib_nrf_cloud_rest` library:
+* nRF Cloud REST library:
 
-  * Updated the :c:func:`nrf_cloud_rest_location_get` function to use the new function :c:func:`nrf_cloud_obj_location_request_payload_add`.
+  * Updated the ``nrf_cloud_rest_location_get`` function to use the new function :c:func:`nrf_cloud_obj_location_request_payload_add`.
 
 * :ref:`lib_lwm2m_client_utils` library:
 

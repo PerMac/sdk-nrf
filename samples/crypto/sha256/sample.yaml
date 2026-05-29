@@ -68,6 +68,7 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp/ns
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
+      - nrf54lc10dk/nrf54lc10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
     integration_platforms:
@@ -91,13 +92,22 @@ tests:
     build_only: true
     extra_args: SB_CONFIG_BOOTLOADER_MCUBOOT=y
     platform_allow:
-      - nrf5340dk/nrf5340/cpuapp/ns
       - nrf52840dk/nrf52840
       - nrf52833dk/nrf52833
     integration_platforms:
-      - nrf5340dk/nrf5340/cpuapp/ns
       - nrf52840dk/nrf52840
       - nrf52833dk/nrf52833
+  # nRF5340 ns needs an MCUboot-compatible flash layout overlay, since the
+  # default board overlay (no-MCUboot) reclaims the boot_partition region.
+  sample.nrf_security.sha256.integration.nrf5340:
+    build_only: true
+    extra_args:
+      - SB_CONFIG_BOOTLOADER_MCUBOOT=y
+      - sha256_EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_ns_mcuboot.overlay"
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp/ns
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp/ns
   sample.newlib_libc.sha256:
     build_only: true
     extra_args: CONFIG_NEWLIB_LIBC=y

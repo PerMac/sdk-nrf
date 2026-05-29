@@ -24,10 +24,8 @@
 #include <nrf_modem_gnss.h>
 #endif
 #include <net/nrf_cloud_location.h>
-#include <net/nrf_cloud_log.h>
 #include "cJSON.h"
 #include "nrf_cloud_agnss_schema_v1.h"
-#include "nrf_cloud_log_internal.h"
 #include "nrf_cloud_fota.h"
 #include "nrf_cloud_transport.h"
 
@@ -44,33 +42,11 @@ enum nrf_cloud_rcv_topic {
 	NRF_CLOUD_RCV_TOPIC_UNKNOWN
 };
 
-/** Special value indicating this is an nRF Cloud binary format */
-#define NRF_CLOUD_BINARY_MAGIC 0x4346526e /* 'nRFC' in little-endian order */
-
-/** Format identifier for remainder of this binary blob */
-#define NRF_CLOUD_DICT_LOG_FMT 0x0001
-
-/** @brief Header preceding binary blobs so nRF Cloud can
- *  process them in correct order using ts_ms and sequence fields.
- */
-struct nrf_cloud_bin_hdr {
-	/** Special marker value indicating this binary blob is a supported type */
-	uint32_t magic;
-	/** Value indicating the service format, such as a dictionary-based log */
-	uint16_t format;
-	/** Value for alignment */
-	uint16_t pad;
-	/** The time at which the log entry was generated */
-	int64_t ts;
-	/** Monotonically increasing sequence number */
-	uint32_t sequence;
-} __packed;
-
 /** @brief Structure to receive dynamically allocated strings containing
  *  details for FOTA job update.
  */
 struct nrf_cloud_fota_job_update {
-	/** REST path or CoAP resource */
+	/** CoAP resource */
 	char *url;
 	/** Update message to send to the url */
 	char *payload;
@@ -165,8 +141,6 @@ int nrf_cloud_enabled_info_sections_json_encode(cJSON *const obj, const char *co
 /** @brief Encode the device status data into a JSON formatted buffer to be saved to
  * the device shadow.
  * The include_state flag controls if the "state" JSON key is included in the output.
- * When calling this function to encode data for use with the UpdateDeviceState nRF Cloud
- * REST endpoint, the "state" key should not be included.
  * The include_reported flag controls if the "reported" JSON key is included in the output.
  * When calling this function to encode data for use with the PATCH /state CoAP endpoint,
  * neither the "state" nor the "reported" keys should be included.
@@ -185,7 +159,7 @@ int nrf_cloud_dev_status_json_encode(const struct nrf_cloud_device_status *const
 /** @brief Free memory allocated by @ref nrf_cloud_shadow_dev_status_encode */
 void nrf_cloud_device_status_free(struct nrf_cloud_data *status);
 
-/** @brief Free memory allocated by @ref nrf_cloud_rest_fota_execution_decode or
+/** @brief Free memory allocated by @ref nrf_cloud_coap_fota_execution_decode or
  * @ref nrf_cloud_fota_job_decode
  */
 void nrf_cloud_fota_job_free(struct nrf_cloud_fota_job_info *const job);
@@ -193,7 +167,7 @@ void nrf_cloud_fota_job_free(struct nrf_cloud_fota_job_info *const job);
 /** @brief Free memory allocated by @ref nrf_cloud_fota_job_update_create */
 void nrf_cloud_fota_job_update_free(struct nrf_cloud_fota_job_update *update);
 
-/** @brief Create an nF Cloud REST or CoAP FOTA job update url and payload. */
+/** @brief Create an nRF Cloud CoAP FOTA job update url and payload. */
 int nrf_cloud_fota_job_update_create(const char *const device_id, const char *const job_id,
 				     const enum nrf_cloud_fota_status status,
 				     const char *const details,
@@ -226,11 +200,11 @@ int nrf_cloud_obj_fota_ble_job_update_create(struct nrf_cloud_obj *const obj,
 					     const enum nrf_cloud_fota_status status);
 #endif
 
-/** @brief Parse the response from a FOTA execution request REST call.
+/** @brief Parse the response from a FOTA execution request CoAP call.
  * If successful, memory will be allocated for the data in @ref nrf_cloud_fota_job_info.
  * The user is responsible for freeing the memory by calling @ref nrf_cloud_fota_job_free.
  */
-int nrf_cloud_rest_fota_execution_decode(const char *const response,
+int nrf_cloud_coap_fota_execution_decode(const char *const response,
 					 struct nrf_cloud_fota_job_info *const job);
 
 /** @brief Parse the data received on the MQTT FOTA topic.
@@ -271,7 +245,7 @@ int nrf_cloud_wifi_req_json_encode(struct wifi_scan_info const *const wifi,
 /** @brief Get the required information from the modem for a single-cell location request. */
 int nrf_cloud_get_single_cell_modem_info(struct lte_lc_cell *const cell_inf);
 
-/** @brief Parse the location response (REST and MQTT) from nRF Cloud. */
+/** @brief Parse the location response (MQTT) from nRF Cloud. */
 int nrf_cloud_location_response_decode(const char *const buf,
 				       struct nrf_cloud_location_result *result);
 
@@ -311,9 +285,6 @@ int json_send_to_cloud(cJSON *const request);
  * the cJSON object's memory.
  */
 cJSON *json_create_req_obj(const char *const app_id, const char *const msg_type);
-
-/** @brief Parse received REST data for an nRF Cloud error code */
-int nrf_cloud_rest_error_decode(const char *const buf, enum nrf_cloud_error *const err);
 
 /** @brief Encode PVT data to be sent to nRF Cloud */
 int nrf_cloud_pvt_data_encode(const struct nrf_cloud_gnss_pvt *const pvt,
@@ -360,7 +331,7 @@ int nrf_cloud_agnss_req_json_encode(const struct nrf_modem_gnss_agnss_data_frame
 #endif /* CONFIG_NRF_CLOUD_AGNSS || CONFIG_NRF_CLOUD_PGPS */
 
 #if defined(CONFIG_NRF_CLOUD_PGPS)
-/** @brief Parse the PGPS response (REST and MQTT) from nRF Cloud */
+/** @brief Parse the PGPS response (MQTT) from nRF Cloud */
 int nrf_cloud_pgps_response_decode(const char *const response,
 				   struct nrf_cloud_pgps_result *const result);
 
@@ -369,13 +340,6 @@ int nrf_cloud_pgps_req_data_json_encode(const struct gps_pgps_request *const req
 					cJSON *const data_obj_out);
 #endif
 
-/** @brief Convert a JSON payload to a parameterized URL for REST. Converts only objects at
- * the root level. Converts only integers and integer arrays, strings, and boolean values.
- * String values are assumed to be URL-compatible.
- */
-int nrf_cloud_json_to_url_params_convert(char *const buf, const size_t buf_size,
-					 const cJSON *const obj);
-
 /** @brief Generate URL for ground-fix request.
  *  Return size of required buffer if buf = NULL, otherwise generate and store
  *  URL into buf based on config, and return 0 on no error or negative error code.
@@ -383,10 +347,6 @@ int nrf_cloud_json_to_url_params_convert(char *const buf, const size_t buf_size,
  */
 int nrf_cloud_ground_fix_url_encode(char *buf, size_t size, const char *base,
 				    const struct nrf_cloud_location_config *config);
-
-/** @brief Encode a log output buffer for transport to the cloud */
-int nrf_cloud_log_json_encode(struct nrf_cloud_log_context *ctx, uint8_t *buf, size_t size,
-			      struct nrf_cloud_data *output);
 
 /** @brief Return the appId string equivalent to the specified sensor type, otherwise NULL. */
 const char *nrf_cloud_sensor_app_id_lookup(enum nrf_cloud_sensor type);

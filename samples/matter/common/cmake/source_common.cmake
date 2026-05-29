@@ -24,7 +24,7 @@ target_sources(app PRIVATE
 zephyr_linker_sources(SECTIONS ${MATTER_COMMONS_SRC_DIR}/clusters/cluster_init.ld)
 
 # Set specific sources that depend on Kconfigs
-if(CONFIG_CHIP_OTA_REQUESTOR OR CONFIG_MCUMGR_TRANSPORT_BT)
+if(CONFIG_CHIP_OTA_REQUESTOR)
     target_sources(app PRIVATE ${MATTER_COMMONS_SRC_DIR}/dfu/ota/ota_util.cpp)
 endif()
 
@@ -32,17 +32,13 @@ if(CONFIG_PWM)
     target_sources(app PRIVATE ${MATTER_COMMONS_SRC_DIR}/pwm/pwm_device.cpp)
 endif()
 
-if(CONFIG_MCUMGR_TRANSPORT_BT)
+if(CONFIG_CHIP_DFU_OVER_BT_SMP)
     target_sources(app PRIVATE ${MATTER_COMMONS_SRC_DIR}/dfu/smp/dfu_over_smp.cpp)
     zephyr_library_link_libraries(MCUBOOT_BOOTUTIL)
 endif()
 
 if(CONFIG_NCS_SAMPLE_MATTER_OPERATIONAL_KEYS_MIGRATION_TO_ITS)
     target_sources(app PRIVATE ${MATTER_COMMONS_SRC_DIR}/migration/migration_manager.cpp)
-endif()
-
-if(CONFIG_CHIP_NUS)
-    target_sources(app PRIVATE ${MATTER_COMMONS_SRC_DIR}/bt_nus/bt_nus_service.cpp)
 endif()
 
 if(CONFIG_NCS_SAMPLE_MATTER_SETTINGS_SHELL)

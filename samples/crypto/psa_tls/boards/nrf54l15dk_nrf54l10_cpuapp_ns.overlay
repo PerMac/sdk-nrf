@@ -1,23 +1,89 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor
+ * Copyright (c) 2026 Nordic Semiconductor
  *
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot0_ns_partition;
+/delete-node/ &storage_partition;
+
+/delete-node/ &tfm_its_partition;
+/delete-node/ &tfm_otp_partition;
+/delete-node/ &tfm_ps_partition;
+
+/delete-node/ &sram0_s;
+/delete-node/ &sram0_ns;
 
 &rram_controller {
 	/delete-node/ cpuflpr_sram;
 	/delete-node/ cpuflpr_rram;
 };
 
-/* Adjust the cpuapp_sram to include the freed up cpuflpr_sram */
+/* Adjust cpuapp_sram to include the freed-up cpuflpr_sram (192 kB total)
+ * and rebalance the secure/non-secure split to 64 kB / 128 kB so the
+ * non-secure image (psa_tls needs ~115 kB of RAM) fits.
+ */
 &cpuapp_sram {
 	reg = <0x20000000 DT_SIZE_K(192)>;
 	ranges = <0x0 0x20000000 0x20030000>;
+
+	sram0_s: image_s@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(64)>;
+		ranges = <0x0 0x0 DT_SIZE_K(64)>;
+	};
+
+	sram0_ns: image_ns@10000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure image memory */
+		reg = <0x10000 DT_SIZE_K(128)>;
+		ranges = <0x0 0x10000 DT_SIZE_K(128)>;
+	};
 };
 
-/* Adjust the cpuapp_rram to include the freed up cpuflpr_rram */
+/* Adjust cpuapp_rram to include the freed-up cpuflpr_rram */
 &cpuapp_rram {
 	reg = <0x0 DT_SIZE_K(1024)>;
+
+	partitions {
+		slot0_s_partition: partition@0 {
+			label = "image-0-secure";
+			reg = <0x0 0x40000>;
+		};
+
+		slot0_ns_partition: partition@40000 {
+			label = "image-0-nonsecure";
+			reg = <0x40000 0xb6000>;
+		};
+
+		tfm_storage_partition: partition@f6000 {
+			compatible = "fixed-subpartitions";
+			label = "tfm-storage";
+			reg = <0xf6000 DT_SIZE_K(40)>;
+			ranges = <0x0 0xf6000 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tfm_its_partition: partition@0 {
+				label = "tfm-its";
+				reg = <0x0 DT_SIZE_K(16)>;
+			};
+
+			tfm_otp_partition: partition@4000 {
+				label = "tfm-otp";
+				reg = <0x4000 DT_SIZE_K(8)>;
+			};
+
+			tfm_ps_partition: partition@6000 {
+				label = "tfm-ps";
+				reg = <0x6000 DT_SIZE_K(16)>;
+			};
+		};
+	};
 };
 
 / {

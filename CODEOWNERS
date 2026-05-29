@@ -34,7 +34,7 @@
 /applications/machine_learning/           @nrfconnect/ncs-si-muffin
 /applications/matter_bridge/              @nrfconnect/ncs-matter
 /applications/matter_weather_station/     @nrfconnect/ncs-matter
-/applications/nrf5340_audio/              @nrfconnect/ncs-audio
+/applications/nrf_audio/              @nrfconnect/ncs-audio
 /applications/nrf_desktop/                @nrfconnect/ncs-si-xcake
 /applications/installer/                  @nrfconnect/ncs-eris
 /applications/installer/**/*.rst          @nrfconnect/ncs-eris-doc
@@ -45,7 +45,7 @@
 /applications/machine_learning/*.rst      @nrfconnect/ncs-si-muffin-doc
 /applications/matter_bridge/**/*.rst      @nrfconnect/ncs-matter-doc
 /applications/matter_weather_station/*.rst @nrfconnect/ncs-matter-doc
-/applications/nrf5340_audio/**/*.rst      @nrfconnect/ncs-audio-doc
+/applications/nrf_audio/**/*.rst      @nrfconnect/ncs-audio-doc
 /applications/nrf_desktop/**/*.rst        @nrfconnect/ncs-si-xcake-doc
 
 # Boards
@@ -162,6 +162,7 @@
 /doc/nrf/libraries/networking/index.rst   @nrfconnect/ncs-doc-leads
 /doc/nrf/libraries/networking/lwm2m_*.rst @nrfconnect/ncs-iot-oulu-tampere-doc
 /doc/nrf/libraries/networking/mqtt_helper.rst @nrfconnect/ncs-cia-doc
+/doc/nrf/libraries/networking/nrf_802154_callbacks_dispatcher.rst @nrfconnect/ncs-thread @nrfconnect/ncs-terahertz-doc
 /doc/nrf/libraries/networking/nrf_cloud.rst @nrfconnect/ncs-nrf-cloud-doc
 /doc/nrf/libraries/networking/nrf_cloud_*.rst @nrfconnect/ncs-nrf-cloud-doc
 /doc/nrf/libraries/networking/nrf_provisioning.rst @nrfconnect/ncs-iot-oulu-tampere-doc
@@ -323,22 +324,16 @@
 /include/bluetooth/gatt_pool.h            @nrfconnect/ncs-si-muffin
 /include/bluetooth/mesh/                  @nrfconnect/ncs-paladin
 /include/bluetooth/scan.h                 @nrfconnect/ncs-blenders @nrfconnect/ncs-si-muffin
-/include/bluetooth/services/ams_client.h  @nrfconnect/ncs-blenders
-/include/bluetooth/services/ancs_client.h @nrfconnect/ncs-blenders
-/include/bluetooth/services/bas_client.h  @nrfconnect/ncs-blenders
-/include/bluetooth/services/bms.h         @nrfconnect/ncs-blenders
-/include/bluetooth/services/cgms.h        @nrfconnect/ncs-blenders
-/include/bluetooth/services/ddfs.h        @nrfconnect/ncs-blenders
-/include/bluetooth/fast_pair/             @nrfconnect/ncs-si-bluebagel
+/include/bluetooth/services/              @nrfconnect/ncs-blenders
+/include/bluetooth/services/dfu_smp.h     @nrfconnect/ncs-eris
 /include/bluetooth/services/fast_pair/    @nrfconnect/ncs-si-bluebagel
 /include/bluetooth/services/hids.h        @nrfconnect/ncs-si-xcake
-/include/bluetooth/services/hrs_client.h  @nrfconnect/ncs-blenders
-/include/bluetooth/services/lbs.h         @nrfconnect/ncs-blenders
-/include/bluetooth/services/mds.h         @nrfconnect/ncs-blenders
-/include/bluetooth/services/nus_client.h  @nrfconnect/ncs-blenders
-/include/bluetooth/services/nus.h         @nrfconnect/ncs-blenders
-/include/bluetooth/services/rscs.h        @nrfconnect/ncs-blenders
-/include/bluetooth/services/throughput.h  @nrfconnect/ncs-blenders
+/include/bluetooth/services/hogp.h        @nrfconnect/ncs-si-xcake
+/include/bluetooth/services/latency.h     @nrfconnect/ncs-dragoon
+/include/bluetooth/services/latency_client.h @nrfconnect/ncs-dragoon
+/include/bluetooth/services/ras.h         @nrfconnect/ncs-dragoon
+/include/bluetooth/services/wifi_provisioning.h @wentong-li @bama-nordic
+/include/bluetooth/fast_pair/             @nrfconnect/ncs-si-bluebagel
 /include/nrf_lcs/                         @nrfconnect/ncs-eris
 /include/caf/                             @nrfconnect/ncs-si-bluebagel @nrfconnect/ncs-si-muffin @nrfconnect/ncs-si-xcake
 /include/debug/                           @nrfconnect/ncs-co-drivers
@@ -716,15 +711,17 @@
 /samples/zephyr/subsys/settings/          @nrfconnect/ncs-low-level-test
 /samples/zephyr/subsys/usb/               @nrfconnect/ncs-low-level-test
 /samples/zephyr/sysbuild/                 @nrfconnect/ncs-low-level-test
+/samples/zephyr/tfm_integration/          @nrfconnect/ncs-aegir
 
 /samples/**/*.svg                         @nrfconnect/ncs-doc-leads
 /samples/**/*.png                         @nrfconnect/ncs-doc-leads
 
 
 # Scripts
+/scripts/compare_quarantine.py            @nordic-piks @PerMac @katgiadla @nrfconnect/ncs-test-leads
 /scripts/docker/                          @nrfconnect/ncs-ci
 /scripts/ci/do_not_merge.py               @carlescufi
-/scripts/ci/quarantine_notifier.py        @PerMac @katgiadla
+/scripts/ci/quarantine_notifier.py        @nordic-piks @PerMac @katgiadla @nrfconnect/ncs-test-leads
 /scripts/ci/test_plan.py                  @nordic-piks @PerMac @katgiadla @nrfconnect/ncs-test-leads
 /scripts/ci/tags.yaml                     @nordic-piks @PerMac @katgiadla @nrfconnect/ncs-test-leads
 /scripts/ci/tags_sdk_zephyr.yaml          @nordic-piks @PerMac @katgiadla @nrfconnect/ncs-test-leads
@@ -821,12 +818,15 @@
 /subsys/bluetooth/host_extensions/        @nrfconnect/ncs-dragoon
 /subsys/bluetooth/mesh/                   @nrfconnect/ncs-paladin
 /subsys/bluetooth/rpc/                    @nrfconnect/ncs-blenders @nrfconnect/ncs-protocols-serialization
-/subsys/bluetooth/services/ams_client.c   @nrfconnect/ncs-blenders
-/subsys/bluetooth/services/ancs_client.c  @nrfconnect/ncs-blenders
-/subsys/bluetooth/fast_pair/              @nrfconnect/ncs-si-bluebagel
+/subsys/bluetooth/services/               @nrfconnect/ncs-blenders
+/subsys/bluetooth/services/dfu_smp.c      @nrfconnect/ncs-eris
+/subsys/bluetooth/services/hids.c         @nrfconnect/ncs-si-xcake
+/subsys/bluetooth/services/hogp.c         @nrfconnect/ncs-si-xcake
+/subsys/bluetooth/services/latency.c      @nrfconnect/ncs-dragoon
+/subsys/bluetooth/services/latency_client.c @nrfconnect/ncs-dragoon
 /subsys/bluetooth/services/ras/           @nrfconnect/ncs-dragoon
 /subsys/bluetooth/services/wifi_prov/     @wentong-li @bama-nordic
-/subsys/bluetooth/services/hids.c         @nrfconnect/ncs-si-xcake
+/subsys/bluetooth/fast_pair/              @nrfconnect/ncs-si-bluebagel
 /subsys/bootloader/                       @nrfconnect/ncs-eris
 /subsys/caf/                              @nrfconnect/ncs-si-bluebagel @nrfconnect/ncs-si-muffin @nrfconnect/ncs-si-xcake
 /subsys/debug/                            @nordic-krch
@@ -938,6 +938,7 @@
 /tests/lib/modem_info/                    @nrfconnect/ncs-cia
 /tests/lib/modem_jwt/                     @nrfconnect/ncs-iot-oulu
 /tests/lib/modem_key_mgmt/                @nrfconnect/ncs-co-networking @nrfconnect/ncs-modem
+/tests/lib/nrf_802154_callbacks_dispatcher/ @nrfconnect/ncs-thread
 /tests/lib/nrf_fuel_gauge/                @nordic-auko
 /tests/lib/nrf_modem_lib/                 @nrfconnect/ncs-modem
 /tests/lib/nrf_modem_lib/nrf9x_sockets/   @nrfconnect/ncs-modem
@@ -955,7 +956,7 @@
 /tests/mocks/nrf_rpc/                     @nrfconnect/ncs-protocols-serialization
 /tests/modules/lib/zcbor/                 @oyvindronningstad
 /tests/modules/mcuboot/                   @nrfconnect/ncs-eris
-/tests/nrf5340_audio/                     @nrfconnect/ncs-audio @nordic-auko
+/tests/nrf_audio/                     @nrfconnect/ncs-audio @nordic-auko
 /tests/psa_crypto/                        @nrfconnect/ncs-aegir
 /tests/subsys/app_event_manager/          @nrfconnect/ncs-si-bluebagel @nrfconnect/ncs-si-muffin @nrfconnect/ncs-si-xcake
 /tests/subsys/app_protect/                @nrfconnect/ncs-low-level-test
@@ -1032,6 +1033,7 @@
 /tests/zephyr/modules/tf-m/regression/    @nrfconnect/ncs-aegir
 /tests/zephyr/subsys/sd/                  @nrfconnect/ncs-low-level-test
 /tests/zephyr/subsys/secure_storage/      @nrfconnect/ncs-aegir
+/tests/zephyr/application_development/ram_context_for_isr/ @nrfconnect/ncs-aegir
 /tests/zephyr/subsys/settings/performance/ @nrfconnect/ncs-eris @rghaddab
 /tests/zephyr/bluetooth/tester/host/       @nrfconnect/ncs-paladin
 

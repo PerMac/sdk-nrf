@@ -4,20 +4,17 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 """
-Token-free quarantine notifier (configuration-driven) with strict mode
+Qarantine notifier
 
 INPUTS:
   --added-file  configurations_added.txt   # lines: ("scenario","platform")
   --removed-file configurations_removed.txt # lines: ("scenario","platform")
   --repo-root .                            # repo root for scanning YAML tests and CODEOWNERS
   --ref <sha>                              # head sha for blob URLs in the comment
-  --strict-missing-codeowners              # mark violation when any affected scenario lacks owners
-  --strict-flag-file strict_missing_codeowners.flag
   --scenario-map scenario_map.txt          # list of all scenarios and their defining paths (for codeowners resolution)
 
 OUTPUTS:
   * quarantine_comment.md                  # Markdown body to post
-  * strict_missing_codeowners.flag         # (only when strict mode enabled AND violations found)
 
 No GitHub API calls here; the workflow will post the comment and upload artifacts.
 """
@@ -63,16 +60,6 @@ def parse_args() -> argparse.Namespace:
         "--ref",
         default=os.environ.get("GITHUB_SHA", "main"),
         help="Git ref/sha used for blob links in comment (default: env GITHUB_SHA or 'main').",
-    )
-    p.add_argument(
-        "--strict-missing-codeowners",
-        action="store_true",
-        help="If any affected scenario has no CODEOWNERS, mark strict violation.",
-    )
-    p.add_argument(
-        "--strict-flag-file",
-        default="strict_missing_codeowners.flag",
-        help="Path to flag file created when strict violation occurs.",
     )
     p.add_argument(
         "--scenario-map",
@@ -125,18 +112,18 @@ def find_owners(filepath: str, compiled_specs: list[tuple[str, list[str]]]) -> s
 
 # ---------------- Comment formatting ----------------
 COMMENT_MARKER = "<!-- quarantine-notifier -->"
-ALL_PLATFORMS_TOKEN = "__ALL__"
+ALL_PLATFORMS_TOKEN = "__ALL_PLATFORMS__"
+ALL_SCENARIOS_TOKEN = "__ALL_SCENARIOS__"
 
 
 def make_comment(
-    owner_to_added: dict[str, list[tuple[str, str]]],
-    owner_to_removed: dict[str, list[tuple[str, str]]],
-    unowned_added: list[tuple[str, str]],
-    unowned_removed: list[tuple[str, str]],
+    owner_to_added: dict[str, list[tuple[str | None, str]]],
+    owner_to_removed: dict[str, list[tuple[str | None, str]]],
+    unowned_added: list[tuple[str | None, str]],
+    unowned_removed: list[tuple[str | None, str]],
     repo_full: None | str,
-    strict: bool,
-    scenario_to_added_platforms: dict[str, set[str]],
-    scenario_to_removed_platforms: dict[str, set[str]],
+    scenario_to_added_platforms: dict[str | None, set[str]],
+    scenario_to_removed_platforms: dict[str | None, set[str]],
     platform_only_added: set[str],
     platform_only_removed: set[str],
 ) -> str:
@@ -179,10 +166,14 @@ def make_comment(
             plat_str = (
                 "all platforms"
                 if ALL_PLATFORMS_TOKEN in plats
-                else ", ".join(sorted(plats)) if plats else "-"
+                else ", ".join(sorted(plats))
             )
+
+            if scen == ALL_SCENARIOS_TOKEN:
+                scen = "all scenarios"
+                
             add_lines.append(
-                f"- **Added to quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
+                f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}"
             )
 
         for scen, path in sorted(owner_to_removed.get(key, [])):
@@ -190,10 +181,14 @@ def make_comment(
             plat_str = (
                 "all platforms"
                 if ALL_PLATFORMS_TOKEN in plats
-                else ", ".join(sorted(plats)) if plats else "-"
+                else ", ".join(sorted(plats))
             )
+
+            if scen == ALL_SCENARIOS_TOKEN:
+                scen = "all scenarios"
+
             del_lines.append(
-                f"- **Removed from quarantine**: `{scen}` (platforms: {plat_str}) (defined in {link(path)})"
+                f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}"
             )
 
         section("Added", add_lines, lines)
@@ -202,8 +197,6 @@ def make_comment(
 
     if any_unowned:
         header = "### ⚠️ Missing CODEOWNERS"
-        if strict:
-            header += " (strict mode enabled)"
         lines.append(header)
 
         if unowned_added:
@@ -230,12 +223,6 @@ def make_comment(
                 )
                 lines.append(f"- `{scen}` (platforms: {plat_str}) (defined in {link(path)})")
 
-        if strict:
-            lines.append("")
-            lines.append(
-                "> **Action required:** Please add appropriate CODEOWNERS entries "
-                "for the paths above. This PR check will fail due to strict mode."
-            )
         lines.append("---")
 
     # Platform-only notices (scenario == None)
@@ -249,17 +236,21 @@ def make_comment(
 
 # ---------------- Grouping ----------------
 def resolve_codeowners_for_scenarios(
-    scenario_to_paths: dict[str, set[str]],
-    scenarios: Iterable[str],
+    scenario_to_paths: dict[str | None, set[str]],
+    scenarios: Iterable[str | None],
     compiled_specs: list[tuple[pathspec.PathSpec, list[str]]],
-) -> tuple[dict[str, list[tuple[str, str]]], list[tuple[str, str]]]:
-    owners_map: dict[str, list[tuple[str, str]]] = {}
-    unowned: list[tuple[str, str]] = []
+) -> tuple[dict[str, list[tuple[str | None, str]]], list[tuple[str | None, str]]]:
+    owners_map: dict[str, list[tuple[str | None, str]]] = {}
+    unowned: list[tuple[str | None, str]] = []
 
     for scen in scenarios:
         # find-my is not part of nrf, has no codeowners and repo with scenario YAMLs is private
         if FIND_MY in scen:
-            owners = ["@nrfconnect/ncs-si-bluebagel"]  
+            owners = ["@nrfconnect/ncs-si-bluebagel"]
+            path_full = "sdk-find-my repository (private)"
+        elif scen == ALL_SCENARIOS_TOKEN:
+            owners = ["@nrfconnect/ncs-test-leads"]  # Full platform quarantine, assign to all test leads
+            path_full = "N/A (all scenarios)"
         else:
             path_full = scenario_to_paths.get(scen, set())
             path_prefix, path = path_full.split("/", 1)
@@ -347,12 +338,12 @@ def main() -> int:
     compiled_specs = compile_pathspecs(rules)
 
     # Build scenario -> platforms maps and platform-only sets
-    scenario_to_added_platforms: dict[str, set[str]] = {}
-    scenario_to_removed_platforms: dict[str, set[str]] = {}
+    scenario_to_added_platforms: dict[str | None, set[str]] = {}
+    scenario_to_removed_platforms: dict[str | None, set[str]] = {}
     platform_only_added: set[str] = set()
     platform_only_removed: set[str] = set()
 
-    def add_pair(target_map: dict[str, set[str]], scen: str, plat: str | None):
+    def add_pair(target_map: dict[str | None, set[str]], scen: str | None, plat: str | None):
         s = target_map.setdefault(scen, set())
         if plat is None:
             s.add(ALL_PLATFORMS_TOKEN)
@@ -385,8 +376,7 @@ def main() -> int:
         owner_to_removed=owned_del,
         unowned_added=unowned_add,
         unowned_removed=unowned_del,
-        repo_full=repo_full,
-        strict=args.strict_missing_codeowners,
+        repo_full=repo_full, 
         scenario_to_added_platforms=scenario_to_added_platforms,
         scenario_to_removed_platforms=scenario_to_removed_platforms,
         platform_only_added=platform_only_added,
@@ -394,18 +384,6 @@ def main() -> int:
     )
 
     Path(args.output).write_text(body, encoding="utf-8")
-
-    strict_violation = args.strict_missing_codeowners and (
-        len(unowned_add) > 0 or len(unowned_del) > 0
-    )
-    if strict_violation:
-        Path(args.strict_flag_file).write_text(
-            "Missing CODEOWNERS detected for affected scenarios.\n", encoding="utf-8"
-        )
-        print(
-            "Strict mode violation: missing CODEOWNERS found. Flag file created.", file=sys.stderr
-        )
-
 
     if body.strip():
         print("Prepared quarantine comment with maintainer mentions and platforms.")

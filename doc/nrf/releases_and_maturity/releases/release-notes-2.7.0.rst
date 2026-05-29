@@ -125,7 +125,7 @@ See the following documentation for an overview of which modem firmware versions
 * `Modem firmware compatibility matrix for the nRF9161 SoC`_
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -439,18 +439,18 @@ nRF5340 Audio
 
 * Added:
 
-  * CAP initiator for the :ref:`unicast client <nrf53_audio_unicast_client_app>`, including Coordinated Set Identification Profile (CSIP).
+  * CAP initiator for the :ref:`unicast client <nrf_audio_unicast_client_app>`, including Coordinated Set Identification Profile (CSIP).
   * Support for any context type, not just media.
-  * Rejection of connection if :ref:`unicast client <nrf53_audio_unicast_client_app>` or :ref:`broadcast source <nrf53_audio_broadcast_source_app>` (or both) tries to use an unsupported sample rate.
+  * Rejection of connection if :ref:`unicast client <nrf_audio_unicast_client_app>` or :ref:`broadcast source <nrf_audio_broadcast_source_app>` (or both) tries to use an unsupported sample rate.
   * Debug prints of discovered endpoints.
-  * Support for multiple :ref:`unicast servers <nrf53_audio_unicast_server_app>` in :ref:`unicast client <nrf53_audio_unicast_client_app>`, regardless of location.
+  * Support for multiple :ref:`unicast servers <nrf_audio_unicast_server_app>` in :ref:`unicast client <nrf_audio_unicast_client_app>`, regardless of location.
 
 * Updated:
 
-  * Low latency configuration to be used as default setting for the nRF5340 Audio application.
+  * Low latency configuration to be used as default setting for the nRF Audio application.
   * ACL interval for service discovery to reduce setup time.
   * Default settings to be lower latency end-to-end.
-  * API for creating a :ref:`broadcast source <nrf53_audio_broadcast_source_app>`, to be more flexible.
+  * API for creating a :ref:`broadcast source <nrf_audio_broadcast_source_app>`, to be more flexible.
   * Migrated build system to support :ref:`configuration_system_overview_sysbuild`.
     This means that the old Kconfig used to enable FOTA updates no longer exists, and the :ref:`file suffix <app_build_file_suffixes>` ``fota`` must be used instead.
 
@@ -458,8 +458,8 @@ nRF5340 Audio
 
   * Missing data in the advertising packet after the directed advertising has timed out.
   * Connection procedure so that a central does not try to connect to the same device twice.
-  * PAC record creation in :ref:`unicast server <nrf53_audio_unicast_server_app>` so that it does not expose source records if only the sink direction is supported.
-  * Presentation delay calculation so that it is railed between min and max values of the :ref:`unicast server <nrf53_audio_unicast_server_app>`.
+  * PAC record creation in :ref:`unicast server <nrf_audio_unicast_server_app>` so that it does not expose source records if only the sink direction is supported.
+  * Presentation delay calculation so that it is railed between min and max values of the :ref:`unicast server <nrf_audio_unicast_server_app>`.
 
 * Removed the LE Audio controller for nRF5340 library.
   The only supported controller for LE Audio is :ref:`ug_ble_controller_softdevice`.
@@ -707,7 +707,7 @@ Cellular samples
 
   * Removed ESP8266 Wi-Fi DTC and Kconfig overlay files.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Added the ``CONFIG_REST_CELL_SEND_DEVICE_STATUS`` Kconfig option to control sending device status on initial connection.
 
@@ -828,7 +828,7 @@ Matter samples
     * Support for emulation of the nRF7001 Wi-Fi companion IC on the nRF7002 DK.
     * Door lock access manager module.
       The module is used to implement support for refined handling and persistent storage of PIN codes.
-    * The :ref:`matter_lock_scheduled_timed_access` feature.
+    * The Scheduled timed access feature.
 
 * :ref:`matter_template_sample` sample:
 
