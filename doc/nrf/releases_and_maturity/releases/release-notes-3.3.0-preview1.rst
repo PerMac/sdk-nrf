@@ -259,8 +259,8 @@ nRF5340 Audio
     with the headsets starting first.
     This eases sniffing of advertisement packets.
 
-  * With the latest release of |nRFVSC|, you can build and program the nRF5340 Audio application using the |nRFVSC| GUI.
-    Updated the :ref:`nrf53_audio_app_building` accordingly: the note about missing support in |nRFVSC| has been removed and the section about programming using standard methods now lists the steps for |nRFVSC| and the command line.
+  * With the latest release of |nRFVSC|, you can build and program the nRF Audio application using the |nRFVSC| GUI.
+    Updated the :ref:`nrf_audio_app_building` accordingly: the note about missing support in |nRFVSC| has been removed and the section about programming using standard methods now lists the steps for |nRFVSC| and the command line.
 
   * Improved handling of I2S RX buffer overruns.
     When an overrun occurs, the most recent block in the current frame is removed to make space for new incoming data.
@@ -404,7 +404,7 @@ Matter samples
 
 * :ref:`matter_lock_sample`:
 
-  * Added support for the :ref:`matter_lock_sample_wifi_thread_switching` in the nRF54LM20 DK with the nRF7002-EB II shield attached.
+  * Added support for the Thread and Wi-Fi switching section in the nRF54LM20 DK with the nRF7002-EB II shield attached.
 
 * :ref:`matter_light_bulb_sample`:
 

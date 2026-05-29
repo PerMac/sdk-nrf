@@ -143,7 +143,7 @@ See the following documentation for an overview of which modem firmware versions
 * `Modem firmware compatibility matrix for the nRF9160 SoC`_
 
 Use the latest version of the `Programmer app`_ of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -459,15 +459,15 @@ Matter bridge
 nRF5340 Audio
 -------------
 
-* Added more information on new :ref:`DNs and QDIDs <nrf5340_audio_dns_and_qdids>`.
+* Added more information on new :ref:`DNs and QDIDs <nrf_audio_dns_and_qdids>`.
 
 * Updated:
 
-  * The documentation for :ref:`nrf53_audio_app_building` with cross-links and additional information.
+  * The documentation for :ref:`nrf_audio_app_building` with cross-links and additional information.
   * The :file:`buildprog.py` script is an app-specific script for building and programming multiple kits and cores with various audio application configurations.
     The script will be deprecated in a future release.
     The audio applications will gradually shift to using only standard tools for building and programming development kits.
-  * The :ref:`nRF5340 Audio application\'s <nrf53_audio_app>` :ref:`script for building and programming <nrf53_audio_app_building_script>` now builds into a directory for each transport, device type, core, and version combination.
+  * The :ref:`nRF Audio application\'s <nrf_audio_app>` :ref:`script for building and programming <nrf_audio_app_building_script>` now builds into a directory for each transport, device type, core, and version combination.
   * The build system to use overlay files for each of the four applications instead of using :file:`Kconfig.default`.
   * The :file:`buildprog.py` script to demand argument ``--transport`` to set either ``unicast`` or ``broadcast``.
 
@@ -501,7 +501,7 @@ nRF Desktop
 
 * Updated:
 
-  * RTT (:kconfig:option:`CONFIG_USE_SEGGER_RTT`) is disabled in the MCUboot configuration of the nRF52840 DK (`mcuboot_smp` file suffix).
+  * RTT (:kconfig:option:`CONFIG_USE_SEGGER_RTT`) is disabled in the MCUboot configuration of the nRF52840 DK (``mcuboot_smp`` file suffix).
     Using RTT for logs in both the application and the bootloader leads to crashes.
     The MCUboot bootloader provides logs over UART.
   * The :ref:`nrf_desktop_failsafe` to use the Zephyr :ref:`zephyr:hwinfo_api` driver for getting and clearing the reset reason information (see the :c:func:`hwinfo_get_reset_cause` and :c:func:`hwinfo_clear_reset_cause` functions).
@@ -774,7 +774,7 @@ Cellular samples
   * :ref:`lwm2m_client`
   * :ref:`modem_shell_application`
   * :ref:`nrf_cloud_multi_service`
-  * :ref:`nrf_cloud_rest_fota`
+  * nRF Cloud REST FOTA sample
 
 * :ref:`modem_shell_application` sample:
 

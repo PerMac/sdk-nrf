@@ -90,7 +90,7 @@ Developing with nRF70 Series
 Developing with nRF54L Series
 =============================
 
-|no_changes_yet_note|
+* Updated builds without Partition Manager to generate the :file:`bootconf.hex` file when |NSIB| is used as the bootloader.
 
 Developing with nRF54H Series
 =============================
@@ -256,14 +256,18 @@ Matter bridge
 
 |no_changes_yet_note|
 
-nRF5340 Audio
--------------
+nRF Audio (formerly nRF5340 Audio)
+----------------------------------
 
-* Added the :kconfig:option:`CONFIG_BT_AUDIO_BROADCAST_BASE_PRINT` kconfig option to print the contents of the BASE when it is received.
-  This option is intended for debugging purposes.
-  It is only valid for the :ref:`broadcast sink application <nrf53_audio_broadcast_sink_app>`.
-* :kconfig:option:`CONFIG_LTO` to enable link-time optimization for the application.
-  It improves application performance and reduces code size.
+* Renamed the application to nRF Audio from nRF5340 Audio.
+* Added:
+
+  * :kconfig:option:`CONFIG_BT_AUDIO_BROADCAST_BASE_PRINT` kconfig option to print the contents of the BASE when it is received.
+    This option is intended for debugging purposes.
+    It is only valid for the :ref:`broadcast sink application <nrf_audio_broadcast_sink_app>`.
+
+  * :kconfig:option:`CONFIG_LTO` to enable link-time optimization for the application.
+    It improves application performance and reduces code size.
 
 * Updated the call to :c:func:`hci_vs_sdc_iso_read_tx_timestamp` so that, when sending ISO data, it is performed at regular intervals instead of every SDU interval.
   This change reduces the frequency of application-controller time synchronization, while significantly reducing processing overhead.
@@ -299,6 +303,17 @@ Bluetooth samples
 * Added:
 
   * The :ref:`channel_sounding_ipt_initiator` and :ref:`channel_sounding_ipt_reflector` samples to demonstrate how to use the Bluetooth Channel Sounding (CS) Inline Phase Correction Term Transfer (IPT) feature.
+  * Support for the ``nrf54ls05dk/nrf54ls05a/cpuapp`` board target in the following samples:
+
+    * :ref:`bluetooth_conn_time_synchronization`
+    * :ref:`direct_test_mode`
+    * :ref:`ble_event_trigger`
+    * :ref:`bluetooth_iso_combined_bis_cis`
+    * :ref:`ble_llpm`
+    * :ref:`bluetooth_radio_coex_1wire_sample`
+    * :ref:`ble_radio_notification_conn_cb`
+    * :ref:`bt_scanning_while_connecting`
+    * :ref:`ble_subrating`
 
 Bluetooth Mesh samples
 ----------------------
@@ -340,10 +355,34 @@ Bluetooth Fast Pair samples
 
   Support for this target was already dropped during the IronSide SE migration in the |NCS| v3.1.0 release.
 
+* :ref:`fast_pair_locator_tag` sample:
+
+  * Updated:
+
+    * UI thread handling for reference board targets with a speaker by moving the speaker control into the common indication thread.
+      The signaling is now done using the :ref:`zephyr:events` API.
+    * The configuration of the non-volatile memory self-protection mechanism in the MCUboot image on the nRF54L board targets.
+      The :kconfig:option:`CONFIG_NCS_MCUBOOT_DISABLE_SELF_RWX` Kconfig option now replaces the :kconfig:option:`CONFIG_FPROTECT`, which is associated with the :ref:`fprotect_readme` library.
+      The new mechanism uses a dedicated RRAMC region to disable read, write, and execute access to the MCUboot partition right before jumping to the application image.
+
+  * Fixed the ringing status indications with the green LED flashes for reference board targets.
+    A ringing status indication was often skipped during the motion detection event.
+
 Cellular samples
 ----------------
 
-|no_changes_yet_note|
+* Removed:
+
+  * All nRF Cloud REST samples as the nRF Cloud REST library has been removed.
+  * Usage of nRF Cloud logging in samples as the feature is being sunset.
+
+* :ref:`gnss_sample` sample:
+
+  * Updated to use the :ref:`lib_nrf_cloud_coap` library instead of the removed nRF Cloud REST library.
+
+* :ref:`modem_shell_application` sample:
+
+  * Updated to use the :ref:`lib_nrf_cloud_coap` library instead of the removed nRF Cloud REST library.
 
 Cryptography samples
 --------------------
@@ -395,13 +434,36 @@ Keys samples
 Matter samples
 --------------
 
-* Removed support for the nRF7002 DK and nRF5340 DK used with the nRF7002 EK shield from all Matter samples, as this configuration was deprecated in |NCS| v3.2.0.
-  The removal is mainly due to the very limited non-volatile memory available for application code.
-  As an alternative, use the nRF54LM20A or nRF54LM20B SoC with the nRF7002-EB II shield.
-  This combination provides significantly more non-volatile memory for Matter over Wi-Fi applications.
+* Updated:
+
+  * The :ref:`matter_window_covering_sample` sample to use the Thread Sleepy End Device (SED) device type by default.
+    You can now enable the Thread Synchronized Sleepy End Device (SSED) device type as an optional feature.
+
+* Removed:
+
+  * Support for the nRF7002 DK and nRF5340 DK used with the nRF7002 EK shield from all Matter samples, as this configuration was deprecated in |NCS| v3.2.0.
+    The removal is mainly due to the very limited non-volatile memory available for application code.
+    As an alternative, use the nRF54LM20A or nRF54LM20B SoC with the nRF7002-EB II shield.
+    This combination provides significantly more non-volatile memory for Matter over Wi-Fi applications.
+  * The implementation of the Matter Door lock sample has been relocated to the `nRF Door Lock and Access Control Add-on`_, that is |NCS| extension.
+    The add-on is an extensible solution offering additional features and expanded integration capabilities.
+    It enables the development of not only Matter-compliant door locks, but also those supporting Aliro and hybrid Matter and Aliro combined functionalities, thereby facilitating the design of versatile smart lock solutions.
 
 Networking samples
 ------------------
+
+* Removed Partition Manager for all Wi-Fi targets from the following samples:
+
+  * :ref:`mqtt_sample` sample
+  * :ref:`udp_sample` sample
+  * :ref:`net_coap_client_sample` sample
+  * :ref:`download_sample` sample
+  * :ref:`https_client` sample
+  * :ref:`http_server` sample
+  * :ref:`aws_iot` sample
+  * :ref:`azure_iot_hub` sample
+
+  Flash and SRAM partitions are supplied using devicetree overlays instead.
 
 * :ref:`azure_iot_hub` sample:
 
@@ -519,6 +581,10 @@ Bluetooth libraries and services
 
   * Fixed missing ATT write length validation in the GATT write handler for the Fast Pair Additional Data characteristic, used by the experimental Personalized Name extension (:kconfig:option:`CONFIG_BT_FAST_PAIR_PN`).
 
+* :ref:`hogp_readme` library:
+
+  * Fixed an issue where the :c:func:`bt_hogp_rep_unsubscribe` function did not clear the notification callback, which prevented the :c:func:`bt_hogp_rep_subscribe` function from succeeding after unsubscribing.
+
 Common Application Framework
 ----------------------------
 
@@ -578,9 +644,13 @@ Libraries for networking
     * The DTLS handshake timeout configuration on native (non-modem) sockets by using ``TLS_DTLS_HANDSHAKE_TIMEOUT_MIN`` and ``TLS_DTLS_HANDSHAKE_TIMEOUT_MAX`` instead of the modem-only ``TLS_DTLS_HANDSHAKE_TIMEO`` option, avoiding handshake failures when connecting to nRF Cloud over Wi-Fi.
     * The internal CoAP client socket descriptor not being updated immediately after a new DTLS socket was connected, which could leave ``client->cc.fd`` stale during reconnect and interfere with CoAP polling, receive, and retransmit paths.
 
-  * Removed the nRF Cloud Alerts library.
+  * Removed:
+
+  * The nRF Cloud Alerts library.
     As part of the migration to *nRF Cloud powered by Memfault*, the nRF Cloud Alerts feature is now redundant.
     `Memfault's Trace Events <Memfault: Error Tracking with Trace Events_>`_ feature replaces the Alerts feature, as it provides equivalent functionality for event reporting, and it also adds enhanced debugging capabilities that were not available with Alerts.
+  * The nRF Cloud REST library.
+  * The nRF Cloud logging library.
 
 * :ref:`lib_nrf_cloud_pgps` library:
 
@@ -591,6 +661,10 @@ Libraries for networking
     * An issue that caused predictions to be stored into incorrect index in flash, leading to an error when the affected predictions were used.
     * An issue where the library tried to use predictions that had not yet been flushed to flash, leading to a prediction validation error.
     * An issue where the library kept trying to use corrupted predictions.
+
+* :ref:`nrf_802154_callbacks_dispatcher` library:
+
+  * Updated the status from experimental to supported.
 
 Libraries for NFC
 -----------------

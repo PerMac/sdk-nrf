@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+#include "memory_map.dtsi"
+
 / {
 	pwmleds0 {
 		compatible = "pwm-leds";

@@ -65,7 +65,7 @@ manifest:
     # https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/guides/modules.html
     - name: zephyr
       repo-path: sdk-zephyr
-      revision: a0530834ef3ce1bac0eda1eee331d5a5c25ce4e4
+      revision: 61983a74a0ae8529e77a0f4abb5b8646bc065555
       import:
         # In addition to the zephyr repository itself, NCS also
         # imports the contents of zephyr/west.yml at the above
@@ -103,7 +103,6 @@ manifest:
           - nanopb
           - net-tools
           - nrf_hw_models
-          - nrf_wifi
           - open-amp
           - percepio
           - picolibc
@@ -128,7 +127,7 @@ manifest:
           compare-by-default: true
     - name: mcuboot
       repo-path: sdk-mcuboot
-      revision: ec9a0644e9bca725c12d865b12d24c854a20376e
+      revision: 08e484f3e907efa012cb2de8d95f6753bc0724f8
       path: bootloader/mcuboot
     - name: qcbor
       url: https://github.com/laurencelundblade/QCBOR
@@ -145,11 +144,11 @@ manifest:
     - name: nrfxlib
       repo-path: sdk-nrfxlib
       path: nrfxlib
-      revision: 0178b40672cb53ad50dda43c7ee9520f6b04f172
+      revision: 79c2aab46e1678d049a8256c9c38936a32da8b3f
     - name: trusted-firmware-m
       repo-path: sdk-trusted-firmware-m
       path: modules/tee/tf-m/trusted-firmware-m
-      revision: 7c7180bd5ac51bea384adfb6bd98979f948b692c
+      revision: e45f5f8c5b4f12843be48e136e6bcf143fa1cc5e
     - name: psa-arch-tests
       repo-path: sdk-psa-arch-tests
       path: modules/tee/tf-m/psa-arch-tests
@@ -157,7 +156,7 @@ manifest:
     - name: matter
       repo-path: sdk-connectedhomeip
       path: modules/lib/matter
-      revision: d7be4e64ada1802ce1b5948a05e3cd160639dda1
+      revision: 50a2175e80c5d6a7752083a08887fa8360ae7a7f
       west-commands: scripts/west/west-commands.yml
       submodules:
         - name: nlio
@@ -183,7 +182,7 @@ manifest:
       # Only for internal Nordic development
       repo-path: dragoon.git
       remote: dragoon
-      revision: 107f8188e0ebfcfc533c0ed30fe7d04f0c6424fc
+      revision: e720db1c0540269136da7dc0ec470d531e4cfa6a
       groups:
         - dragoon
     - name: cjson
@@ -197,7 +196,7 @@ manifest:
           compare-by-default: false
     - name: find-my
       repo-path: sdk-find-my
-      revision: 471cd4451585428a994b4b08aa6823275a8d2a64
+      revision: 8ffe25f09bcef3d5d007b94dc580e8b45e99b7ce
       groups:
         - find-my
     - name: azure-sdk-for-c
@@ -219,7 +218,7 @@ manifest:
           upstream-sha: 1be6ca7253133a21a1e9fe0fbb4656e17d63a936
           compare-by-default: false
     - name: libmodem
-      revision: 704d4f4c3d7431a922b1a5e7737b50a59478a4fe
+      revision: c2d94ec78bcbce67849004c6a766a03bb4f31d2a
       groups:
         - libmodem
     - name: openthread
@@ -237,6 +236,9 @@ manifest:
       revision: ae9f21960477636720a72ced869a6c342d502484
       groups:
         - doc-internal
+    - name: nrf_wifi
+      revision: d28d7e972a208f5007f745bd0a116d4cde3c4100
+      path: modules/lib/nrf_wifi
 
     # Other third-party repositories.
     - name: cmock

@@ -74,7 +74,7 @@ Supported modem firmware
 See `Modem firmware compatibility matrix`_ for an overview of which modem firmware versions have been tested with this version of the |NCS|.
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -190,7 +190,7 @@ Matter
 
   * Support for switching between Matter over Thread and Matter over Wi-Fi.
     This feature is available for the :ref:`matter_lock_sample` sample programmed on ``nrf5340dk_nrf5340_cpuapp`` with the ``nrf7002_ek`` shield attached, using the ``thread_wifi_switched`` build type.
-    See :ref:`matter_lock_sample_wifi_thread_switching` in the sample documentation for more information.
+    See the Thread and Wi-Fi switching section in the sample documentation for more information.
   * Support for Wi-Fi Network Diagnostic Cluster (which counts the number of packets received and transmitted on the Wi-Fi interface).
   * Default support for nRF7002 revision B.
   * Specific QR code and onboarding information in the documentation for each :ref:`Matter sample <matter_samples>` and the :ref:`Matter weather station <matter_weather_station_app>`.
@@ -353,8 +353,8 @@ nRF5340 Audio
 
   * The power module has been refactored to use the upstream Zephyr INA23X sensor driver.
   * BIS headsets can now switch between two broadcast sources (two hardcoded broadcast names).
-  * :ref:`nrf53_audio_app_ui` and "Testing the default CIS mode" sections in the application documentation with information about using **VOL** buttons to switch headset channels.
-  * :ref:`nrf53_audio_app_requirements` section in the application documentation by moving the information about the nRF5340 Audio DK to `Nordic Semiconductor Infocenter`_, under `nRF5340 Audio DK Hardware`_.
+  * :ref:`nrf_audio_app_ui` and "Testing the default CIS mode" sections in the application documentation with information about using **VOL** buttons to switch headset channels.
+  * :ref:`nrf_audio_app_requirements` section in the application documentation by moving the information about the nRF5340 Audio DK to `Nordic Semiconductor Infocenter`_, under `nRF5340 Audio DK Hardware`_.
 
 nRF Machine Learning (Edge Impulse)
 -----------------------------------
@@ -499,7 +499,7 @@ nRF9160 samples
     * Timeout command-line arguments for the ``location get`` command changed from integers in milliseconds to floating-point values in seconds.
     * Replaced deprecated LwM2M API calls with calls to new functions.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Added the usage of GCI search option if running modem firmware v1.3.4.
   * Updated the sample to wait for RRC idle mode before requesting neighbor cell measurements.
@@ -535,7 +535,7 @@ nRF9160 samples
 
   * Updated the sample to use a partition in external flash for full modem FOTA updates.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Added sending an alert to nRF Cloud on boot.
 
@@ -546,7 +546,7 @@ nRF9160 samples
   * nRF9160: Simple MQTT sample.
     This is now replaced by a new :ref:`mqtt_sample` sample that supports Wi-Fi and LTE connectivity.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Updated:
 
@@ -592,7 +592,7 @@ Matter samples
   * Added:
 
     * ``thread_wifi_switched`` build type that enables switching between Thread and Wi-Fi network support in the field.
-      See :ref:`matter_lock_sample_wifi_thread_switching` in the sample documentation for more information.
+      See the Thread and Wi-Fi switching section in the sample documentation for more information.
     * Wi-Fi low power configuration using Wi-Fi's :ref:`Legacy Power Save mode <ug_nrf70_developing_powersave_dtim_unicast>`.
 
   * The sample is now positively verified against "Works with Google" certification tests.
@@ -856,9 +856,9 @@ Libraries for networking
 
   * Removed location events and event handlers.
 
-* :ref:`lib_nrf_cloud_rest` library:
+* nRF Cloud REST library:
 
-  * Added the :c:func:`nrf_cloud_rest_device_status_message_send` function to send the device status information as an nRF Cloud device message.
+  * Added the ``nrf_cloud_rest_device_status_message_send`` function to send the device status information as an nRF Cloud device message.
 
 Libraries for NFC
 -----------------
@@ -878,21 +878,21 @@ Other libraries
 ---------------
 
 * Added the :ref:`lib_pcm_mix` library.
-  This was previously a component of the :ref:`nrf53_audio_app` application, now moved to :file:`lib/pcm_mix`.
+  This was previously a component of the :ref:`nrf_audio_app` application, now moved to :file:`lib/pcm_mix`.
 
 * :ref:`lib_contin_array` library:
 
-  * Updated by separating the library from the :ref:`nrf53_audio_app` application and moving it to :file:`lib/contin_array`.
+  * Updated by separating the library from the :ref:`nrf_audio_app` application and moving it to :file:`lib/contin_array`.
     Updated code and documentation accordingly.
 
 * :ref:`lib_pcm_stream_channel_modifier` library:
 
-  * Updated by separating the library from the :ref:`nrf53_audio_app` application and moving it to :file:`lib/pcm_stream_channel_modifier`.
+  * Updated by separating the library from the :ref:`nrf_audio_app` application and moving it to :file:`lib/pcm_stream_channel_modifier`.
     Updated code and documentation accordingly.
 
 * :ref:`lib_data_fifo` library:
 
-  * Updated by separating the library from the :ref:`nrf53_audio_app` application and moving it to :file:`lib/data_fifo`.
+  * Updated by separating the library from the :ref:`nrf_audio_app` application and moving it to :file:`lib/data_fifo`.
     Updated code and documentation accordingly.
 
 * :ref:`QoS` library:

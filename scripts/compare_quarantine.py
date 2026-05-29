@@ -26,16 +26,20 @@ except Exception:
     print("ERROR: PyYAML is required (pip install pyyaml).", file=sys.stderr)
     raise
 
-ALL_PLATFORMS_TOKEN = "__ALL__"
+ALL_PLATFORMS_TOKEN = "__ALL_PLATFORMS__"
+ALL_SCENARIOS_TOKEN = "__ALL_SCENARIOS__"
 FIND_MY = "find_my"
 
 SCENARIO_YAML_GLOBS = [
     "**/samples/**/*/sample.yaml",
     "**/samples/**/*/testcase.yaml",
+    "**/samples/**/*/tests.yaml",
     "**/applications/**/*/sample.yaml",
     "**/applications/**/*/testcase.yaml",
+    "**/applications/**/*/tests.yaml",
     "**/tests/**/*/testcase.yaml",
     "**/tests/**/*/sample.yaml",
+    "**/tests/**/*/tests.yaml",
 ]
 
 def get_all_configurations(quarantine_file):
@@ -46,7 +50,7 @@ def get_all_configurations(quarantine_file):
 
         for qelem in quarantine_data.qlist:
             # Add all configurations from this quarantine element
-            scenarios = qelem.scenarios if qelem.scenarios else [None]
+            scenarios = qelem.scenarios if qelem.scenarios else [ALL_SCENARIOS_TOKEN]
             platforms = qelem.platforms if qelem.platforms else [ALL_PLATFORMS_TOKEN]
             # Generate all possible pairs
             configurations.update(product(scenarios, platforms))
@@ -56,14 +60,14 @@ def get_all_configurations(quarantine_file):
         sys.exit(1)
 
 
-def expand_configurations(configurations: set[tuple[str, str]], scenario_map: dict[str, set[str]]) -> set[tuple[str, str]]:
+def expand_configurations(configurations: Iterable[tuple[str, str]], scenario_map: Iterable[str]) -> set[tuple[str, str]]:
     """Expand configurations with scenario patterns to explicit scenario-platform pairs."""
     expanded = set()
     for scenario_pattern, platform in configurations:
-        if scenario_pattern is None:
-            # No scenario specified, keep as is
-            expanded.add((None, platform))
-        if FIND_MY in scenario_pattern:
+        if scenario_pattern is ALL_SCENARIOS_TOKEN:
+            # No scenario specified, applies to all,leave token to resolve during comment creation
+            expanded.add((scenario_pattern, platform))
+        elif FIND_MY in scenario_pattern:
             # find-my scenarios are not part of nrf
             expanded.add((scenario_pattern, platform))
         else:
