@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: quarantine-generate-${{ github.event.pull_request.number }}
@@ -31,7 +32,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ env.HEAD_SHA }}
           path: pr/nrf
-          fetch-depth: 0
+          fetch-depth: 1
 
       # Checkout the trusted base repo to run the notifier from trusted code
       - name: Checkout base repository
@@ -48,51 +49,16 @@ jobs:
           python -m pip install pyyaml west pathspec
 
 
+      # Compare base..head via GitHub API.
       - name: Detect changed quarantine YAML files (base vs PR)
         id: quarantine_changed_files
-        shell: bash
-        run: |
-          set -euo pipefail
-          # NOTE: We intentionally write to a tmpfile first instead of using
-          # `mapfile < <(pipeline)`. Bash process substitution swallows failures
-          # inside the pipeline (even with `set -euo pipefail`), which can cause
-          # silent success on sed/find errors. Writing to a file ensures any
-          # failure aborts the step and fails the workflow.
-          tmpfile=$(mktemp)
-
-          {
-            find ./pr/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
-            find ./base/nrf/scripts -type f -name 'quarantine*.yaml' 2>/dev/null
-          } \
-          | sed -E 's#^\./(pr|base)/##' \
-          | sort -u \
-          > "$tmpfile"
-
-          mapfile -t all_files < "$tmpfile"
-          rm -f "$tmpfile"
-
-          changed=()
-          for rel in "${all_files[@]}"; do
-            b="base/$rel"
-            p="pr/$rel"
-
-            # affected if content differs
-            if ! cmp -s "$b" "$p"; then
-              changed+=("$rel")
-            fi
-          done
-
-          echo "Changed quarantine files count: ${#changed[@]}"
-          if [[ ${#changed[@]} -gt 0 ]]; then
-            printf '%s\n' "${changed[@]}"
-          fi
-
-          # Expose as multiline output for next step
-          {
-            echo "files<<EOF"
-            printf '%s\n' "${changed[@]}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+        with:
+          base_sha: ${{ env.BASE_SHA }}
+          sha: ${{ env.HEAD_SHA }}
+          files: |
+            scripts/quarantine*.yaml
+          separator: "\n"
 
       - name: Compare only affected quarantine YAMLs (base vs PR)
         shell: bash
@@ -108,12 +74,13 @@ jobs:
           OUTDIR="quarantine-diff-results"
           mkdir -p "$OUTDIR"
 
-          files="${{ steps.quarantine_changed_files.outputs.files }}"
+          echo "Changed quarantine files count: ${{ steps.quarantine_changed_files.outputs.all_modified_files_count }}"
+          files="${{ steps.quarantine_changed_files.outputs.all_modified_files }}"
 
           while IFS= read -r rel; do
             [[ -z "$rel" ]] && continue
             echo "== Comparing affected quarantine file: $rel =="
-            python3 nrf/scripts/compare_quarantine.py "../pr/$rel" "$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
+            python3 nrf/scripts/compare_quarantine.py "../pr/nrf/$rel" "nrf/$rel" --outdir "$OUTDIR" "--repo-root" ./nrf
           done <<< "$files"
 
       - name: Combine quarantine added/removed files
