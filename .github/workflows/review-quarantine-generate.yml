@@ -95,7 +95,7 @@ jobs:
             --ref "${{ env.HEAD_SHA }}"
 
       - name: Upload quarantine scenario diff artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: quarantine-scenario-diff
           path: base/quarantine-diff-results/*.txt
@@ -110,7 +110,7 @@ jobs:
 
       # Upload artifacts for the publish workflow (includes PR number)
       - name: Upload artifacts for publish workflow
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: quarantine-artifacts-pr${{ env.PR_NUMBER }}-sha${{ env.HEAD_SHA }}
           path: |
