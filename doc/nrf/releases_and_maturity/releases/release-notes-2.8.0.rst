@@ -67,7 +67,7 @@ Added the following features as experimental:
 
 * LE Audio:
 
-  * The :ref:`nrf_auraconfig` sample, which implements the BIS gateway mode for the :ref:`nrf53_audio_app` and can act as an `Auracast™`_ broadcaster if you are using pre-sets compatible with Auracast.
+  * The :ref:`nrf_auraconfig` sample, which implements the BIS gateway mode for the :ref:`nrf_audio_app` and can act as an `Auracast™`_ broadcaster if you are using pre-sets compatible with Auracast.
     It features a shell interface that allows you to configure the broadcast source in many different ways.
 
 * Bluetooth LE:
@@ -87,7 +87,7 @@ Added the following features as experimental:
 * nRF Cloud:
 
   * SMP FOTA, which allows updating a companion device such as an nRF52 Series device running MCUboot from a FOTA image received by an nRF91 Series device from the cloud.
-    This is showcased in the sample :ref:`nrf_cloud_rest_fota`.
+    This is showcased in the Cellular: nRF Cloud REST FOTA sample.
 
 * Bootloaders and DFU:
 
@@ -145,7 +145,7 @@ See the following documentation for an overview of which modem firmware versions
 * `Modem firmware compatibility matrix for the nRF9160 SoC`_
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -382,7 +382,7 @@ Bluetooth LE
 
 * Added functions ``bt_hci_err_to_str()`` and ``bt_security_err_to_str()`` to allow printing error codes as strings.
   Each function returns string representations of the error codes when the corresponding Kconfig option, :kconfig:option:`CONFIG_BT_HCI_ERR_TO_STR` or :kconfig:option:`CONFIG_BT_SECURITY_ERR_TO_STR`, is enabled.
-  The :ref:`ble_samples` and :ref:`nrf53_audio_app` are updated to use these new functions.
+  The :ref:`ble_samples` and :ref:`nrf_audio_app` are updated to use these new functions.
 
 * Updated:
 
@@ -415,7 +415,7 @@ Bluetooth Mesh
   To use the metadata, enable the :kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_SRV` Kconfig option.
 
 * Removed the ``CONFIG_BT_MESH_SENSOR_USE_LEGACY_SENSOR_VALUE`` Kconfig option, deprecated in the |NCS| v2.6.0, as the old APIs, based on the ``sensor_value`` type, are removed.
-  You need to update applications using the old APIs, as described in the :ref:`v2.6.0 migration guide <nrf5340_audio_migration_notes>`.
+  You need to update applications using the old APIs, as described in the :ref:`v2.6.0 migration guide <nrf_audio_migration_notes>`.
 
 Matter
 ------
@@ -530,15 +530,15 @@ nRF5340 Audio
 
   * The functions ``bt_hci_err_to_str()`` and ``bt_security_err_to_str()`` that are used to allow printing error codes as strings.
     Each function returns string representations of the error codes when the corresponding Kconfig option, :kconfig:option:`CONFIG_BT_HCI_ERR_TO_STR` or :kconfig:option:`CONFIG_BT_SECURITY_ERR_TO_STR`, is enabled.
-  * CSIS to the BIS sink if the scan delegator feature, :ref:`CONFIG_BT_AUDIO_SCAN_DELEGATOR <nrf53_audio_app_config_audio_app_options>`, is enabled.
+  * CSIS to the BIS sink if the scan delegator feature, :ref:`CONFIG_BT_AUDIO_SCAN_DELEGATOR <nrf_audio_app_config_audio_app_options>`, is enabled.
     Once a phone is connected to a BIS sink, the phone will find and connect to the second headset.
     Also, the phone can control the BIS headset in a group and deliver the PAST to both headsets at the same time.
   * Create CIG after reading the PACS from the first connected unicast server.
-  * A minimal scan delegator to the unicast server if the feature, :ref:`CONFIG_BT_AUDIO_SCAN_DELEGATOR <nrf53_audio_app_config_audio_app_options>`, is enabled.
+  * A minimal scan delegator to the unicast server if the feature, :ref:`CONFIG_BT_AUDIO_SCAN_DELEGATOR <nrf_audio_app_config_audio_app_options>`, is enabled.
   * Available or support context type to PACS in broadcast sink and unicast client if the feature, :kconfig:option:`CONFIG_BT_PAC_SRC_NOTIFIABLE` is enabled.
   * The :ref:`nrf_auraconfig` sample.
 
-* Updated the :ref:`nrf53_audio_app_overview` documentation page with the :ref:`nrf53_audio_app_overview_files` section.
+* Updated the :ref:`nrf_audio_app_overview` documentation page with the :ref:`nrf_audio_app_overview_files` section.
 * Removed the ``EXPERIMENTAL`` flag from the sample rate converter.
 
 nRF Desktop
@@ -655,7 +655,7 @@ Bluetooth samples
   * The :ref:`ble_radio_notification_conn_cb` sample demonstrating how to use the :ref:`ug_radio_notification_conn_cb` feature.
   * The :ref:`bluetooth_conn_time_synchronization` sample demonstrating microsecond-accurate synchronization of connections that are happening over Bluetooth Low Energy Asynchronous Connection-oriented Logical transport (ACL).
   * The :ref:`ble_subrating` sample that showcases the effect of the LE Connection Subrating feature on the duty cycle of a connection.
-  * The :ref:`nrf_auraconfig` sample that implements the :ref:`BIS gateway mode <nrf53_audio_app_overview>` and can act as an `Auracast <Auracast™_>`_ broadcaster if you are using a preset compatible with Auracast.
+  * The :ref:`nrf_auraconfig` sample that implements the :ref:`BIS gateway mode <nrf_audio_app_overview>` and can act as an `Auracast <Auracast™_>`_ broadcaster if you are using a preset compatible with Auracast.
   * Support for the :zephyr:board:`nrf54l15dk` board in the following samples:
 
     * :ref:`central_bas`
@@ -764,7 +764,7 @@ Cellular samples
   * Added ``link modem`` command for initializing and shutting down the modem.
   * Updated to use the :ref:`at_parser_readme` library instead of the AT command parser library.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Added:
 
@@ -797,7 +797,7 @@ Cellular samples
   * Fixed an issue where the accepted shadow was not marked as received because the config section did not yet exist in the shadow.
   * Removed redundant logging that is now done by the :ref:`lib_nrf_cloud` library.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Added:
 
@@ -812,7 +812,7 @@ Cellular samples
 
   * Removed redundant logging that is now done by the :ref:`lib_nrf_cloud` library.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Removed redundant logging that is now done by the :ref:`lib_nrf_cloud` library.
 
@@ -1275,9 +1275,9 @@ Libraries for networking
   * Fixed an issue where a failed delta update for the modem would not clear the state and blocks future delta updates.
     This only occurred when an LwM2M Firmware object was used in push mode.
 
-* :ref:`lib_nrf_cloud_rest` library:
+* nRF Cloud REST library:
 
-  * Added the function :c:func:`nrf_cloud_rest_shadow_transform_request` to request shadow data using a JSONata expression.
+  * Added the function ``nrf_cloud_rest_shadow_transform_request`` to request shadow data using a JSONata expression.
 
 * :ref:`lib_nrf_cloud` library:
 
@@ -1339,12 +1339,12 @@ Libraries for networking
 
   * Fixed:
 
-    * A hard fault that occurred when encoding AGNSS request data and the ``net_info`` field of the :c:struct:`nrf_cloud_rest_agnss_request` structure is NULL.
+    * A hard fault that occurred when encoding AGNSS request data and the ``net_info`` field of the ``nrf_cloud_rest_agnss_request`` structure is NULL.
     * An issue where certain CoAP functions would return zero, indicating success, even though there was an error.
 
   * Removed the experimental status (:kconfig:option:`CONFIG_EXPERIMENTAL`) from the :kconfig:option:`CONFIG_NRF_CLOUD_COAP_DOWNLOADS` Kconfig option.
 
-* :ref:`lib_nrf_cloud_log` library:
+* nRF Cloud Logging library library:
 
   * Added:
 

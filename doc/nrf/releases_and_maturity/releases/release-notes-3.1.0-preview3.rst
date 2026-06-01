@@ -233,7 +233,7 @@ nRF5340 Audio
     The :ref:`net_buf_interface` will also contain the metadata about the audio stream in the ``user_data`` section of the API.
     This change was done to transition to standard Zephyr APIs, as well as to have a structured way to pass N-channel audio between modules.
   * The optional buildprog tool to use `nRF Util`_ instead of nrfjprog that has been deprecated.
-  * The documentation pages with information about the :ref:`SD card playback module <nrf53_audio_app_overview_architecture_sd_card_playback>` and :ref:`how to enable it <nrf53_audio_app_configuration_sd_card_playback>`.
+  * The documentation pages with information about the :ref:`SD card playback module <nrf_audio_app_overview_architecture_sd_card_playback>` and :ref:`how to enable it <nrf_audio_app_configuration_sd_card_playback>`.
 
 * Removed:
 
@@ -358,9 +358,9 @@ Cellular samples
 
 * Added support for the Thingy:91 X to the following samples:
 
-  * :ref:`nrf_cloud_rest_device_message`
-  * :ref:`nrf_cloud_rest_cell_location`
-  * :ref:`nrf_cloud_rest_fota`
+  * nRF Cloud REST Device Message sample
+  * nRF Cloud REST cellular location sample
+  * nRF Cloud REST FOTA sample
 
 * Deprecated the LTE Sensor Gateway sample.
   It is no longer maintained.
@@ -377,16 +377,16 @@ Cellular samples
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
   * Removed Provisioning service and JITP.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Removed JITP.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
   * Fixed SMP FOTA for the nRF9160 DK.

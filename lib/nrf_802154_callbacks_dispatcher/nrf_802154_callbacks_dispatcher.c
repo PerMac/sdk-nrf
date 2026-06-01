@@ -9,7 +9,7 @@
  *   This file implements the callbacks dispatcher for the nRF IEEE802.15.4 radio driver.
  */
 
-#include "nrf_802154_callbacks_dispatcher.h"
+#include <net/nrf_802154_callbacks_dispatcher.h>
 #include <errno.h>
 #include <nrf_802154.h>
 #include <nrf_802154_types.h>
@@ -157,7 +157,7 @@ int nrf_802154_callbacks_dispatcher_switch(const char *name)
 	active_entry_set(next_entry);
 	k_mutex_unlock(&switch_mutex);
 
-	LOG_INF("Switched client: %s", next_entry->name);
+	LOG_INF("Switched client: %s", next_entry != NULL ? next_entry->name : "null");
 
 	return 0;
 }

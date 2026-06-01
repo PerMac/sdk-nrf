@@ -1688,6 +1688,19 @@ endpoint 1 {
   device type nordic_dev_kit = 4293984257, version 1;
 
 
+  server cluster Descriptor {
+    callback attribute deviceTypeList;
+    callback attribute serverList;
+    callback attribute clientList;
+    callback attribute partsList;
+    callback attribute endpointUniqueID;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
+  }
+
   server cluster NordicDevKit {
     emits event UserButtonChanged;
     callback attribute generatedCommandList;

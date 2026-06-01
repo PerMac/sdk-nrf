@@ -15,7 +15,6 @@ The following table lists variants and extensions available out of the box for e
     * - Variant or extension
       - Light bulb
       - Light switch
-      - Door lock
       - Template
       - Window covering
       - Thermostat
@@ -24,7 +23,6 @@ The following table lists variants and extensions available out of the box for e
       - Contact sensor
       - Closure
     * - FEM support
-      - ✔
       - ✔
       - ✔
       - ✔
@@ -44,9 +42,7 @@ The following table lists variants and extensions available out of the box for e
       - ✔
       - ✔
       - ✔
-      - ✔
     * - Thread support
-      - ✔
       - ✔
       - ✔
       - ✔
@@ -59,9 +55,8 @@ The following table lists variants and extensions available out of the box for e
     * - :ref:`Thread role <thread_ot_device_types>`
       - Router
       - SED
-      - SED
       - MED
-      - SSED
+      - SED, SSED (optional)
       - MED
       - SED
       - SED
@@ -69,8 +64,7 @@ The following table lists variants and extensions available out of the box for e
       - FTD
     * - :ref:`ICD mode <ug_matter_device_low_power_icd>`
       - Not supported
-      - SIT
-      - SIT
+      - SIT, LIT (optional)
       - Not supported
       - SIT
       - Not supported
@@ -82,27 +76,14 @@ The following table lists variants and extensions available out of the box for e
       - ✔
       - ✔
       - ✔
-      - ✔
       -
       - ✔
       -
       -
       -
       - ✔
-    * - Thread and Wi-Fi switching
-      -
-      -
-      - ✔
-      -
-      -
-      -
-      -
-      -
-      -
-      -
     * - Low power configuration by default
       -
-      - ✔
       - ✔
       -
       - ✔
@@ -113,6 +94,9 @@ The following table lists variants and extensions available out of the box for e
       -
 
 See the sample documentation pages for instructions about how to enable these variants and extensions.
+
+Additionally, a Matter Door Lock sample is available in the `nRF Door Lock and Access Control Add-on`_ repository.
+This add-on includes also samples with support for the Aliro protocol, and Matter and Aliro combined solution.
 
 In addition to these samples, check also the following Matter applications:
 

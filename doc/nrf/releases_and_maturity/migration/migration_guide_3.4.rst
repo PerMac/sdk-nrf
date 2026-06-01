@@ -52,6 +52,10 @@ Matter
 
      For more information on how to configure partitions using DTS and how to migrate your existing configuration to DTS, see the :ref:`migration_partitions` page.
 
+   * The :ref:`matter_window_covering_sample` sample now uses the Thread Sleepy End Device (SED) device type by default.
+     You can enable the Thread Synchronized Sleepy End Device (SSED) device type as an optional feature.
+     To enable the Thread SSED support, add the ``-DEXTRA_CONF_FILE=ssed.conf`` extra argument to the build command.
+
 .. _migration_3.4_recommended:
 
 Recommended changes
@@ -61,6 +65,18 @@ The following changes are recommended for your application to work optimally aft
 
 Build and configuration system
 ==============================
+
+* The Kconfig options :kconfig:option:`CONFIG_SRAM_SIZE` and :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` have been deprecated.
+  Use the devicetree ``zephyr.sram`` chosen node to specify which RAM node is used.
+  If you adjust either option manually, :kconfig:option:`CONFIG_SRAM_DEPRECATED_KCONFIG_SET` is set to indicate the deprecation.
+  However, applications will continue to build and work with this notice.
+  For the majority of cases, you should not change these values as they default to the values of the ``zephyr,sram`` chosen node.
+  If the code references these Kconfig options, you should update them.
+  No deprecation warning will be emitted when these values are referenced due to the Kconfig define generation process.
+
+  .. note::
+     This is listed in the recommended changes for this |NCS| release.
+     In the next |NCS| release, this will be a required change.
 
 Nordic SoC platform symbols (Haltium / Lumos)
 ---------------------------------------------
