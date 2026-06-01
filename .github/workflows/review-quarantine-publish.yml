@@ -29,7 +29,7 @@ jobs:
 
     steps:
       - name: Download generated artifacts from the triggering run
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # Download artifacts from the exact run that triggered this workflow
