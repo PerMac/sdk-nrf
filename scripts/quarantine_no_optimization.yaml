@@ -6,13 +6,9 @@
 #     - None
 
 - scenarios:
-    - nrf5340_audio.bt_le_audio_tx
-  platforms:
-    - native_sim/native
-  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39377"
+    - sample.benchmark.coremark.*
+  comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38741"
 
-- scenarios:
-    - nrf_provisioning.unittest_scheduled
-  platforms:
+- platforms:
     - native_sim/native
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39378"
