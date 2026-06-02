@@ -125,7 +125,7 @@ See the following documentation for an overview of which modem firmware versions
 * `Modem firmware compatibility matrix for the nRF9160 SoC`_
 
 Use the latest version of the `Programmer app`_ of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -398,7 +398,7 @@ nRF5340 Audio
 * Added:
 
   * Experimental support for Audio on the nRF5340 DK, with LED state indications and button controls.
-  * Experimental Support for stereo in :ref:`broadcast sink app<nrf53_audio_broadcast_sink_app>`.
+  * Experimental Support for stereo in :ref:`broadcast sink app<nrf_audio_broadcast_sink_app>`.
     The broadcast sink can now receive audio from two BISes and play it on the left and right channels of the audio output, if the correct configuration options are enabled.
     The I2S output will be stereo, but :zephyr:board:`nrf5340_audio_dk` will still only have one audio output channel, because it has a mono codec (CS47L63).
     RTT shell commands have been added to select if the HW codec plays back I2S channel 0/left, 1/right or 0 and 1 mixed (default).
@@ -412,7 +412,7 @@ nRF5340 Audio
     The :ref:`net_buf_interface` will also contain the metadata about the audio stream in the ``user_data`` section of the API.
     This change was done to transition to standard Zephyr APIs, as well as to have a structured way to pass N-channel audio between modules.
   * The optional buildprog tool to use `nRF Util`_ instead of nrfjprog that has been deprecated.
-  * The documentation pages with information about the :ref:`SD card playback module <nrf53_audio_app_overview_architecture_sd_card_playback>` and :ref:`how to enable it <nrf53_audio_app_configuration_sd_card_playback>`.
+  * The documentation pages with information about the :ref:`SD card playback module <nrf_audio_app_overview_architecture_sd_card_playback>` and :ref:`how to enable it <nrf_audio_app_configuration_sd_card_playback>`.
   * The buffer count (:kconfig:option:`CONFIG_BT_ISO_TX_BUF_COUNT` and :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT`) to be in-line with SoftDevice Controller (SDC) defaults.
     This can be changed and optimized for specific use cases.
   * The audio devices are now set up with a location bitfield according to the BT Audio specification, instead of a channel.
@@ -424,7 +424,7 @@ nRF5340 Audio
 
   * The uart_terminal tool to use standardized tools.
     Similar functionality is provided through the `nRF Terminal <nRF Terminal documentation_>`_ in the |nRFVSC|.
-  * The functionality to jump between BIS0 and BIS1 in the :ref:`broadcast sink <nrf53_audio_broadcast_sink_app>` application.
+  * The functionality to jump between BIS0 and BIS1 in the :ref:`broadcast sink <nrf_audio_broadcast_sink_app>` application.
     **Button 4** is no longer needed for this purpose due to added support for stereo audio.
 
 nRF Desktop
@@ -644,9 +644,9 @@ Cellular samples
 
 * Added support for the Thingy:91 X to the following samples:
 
-  * :ref:`nrf_cloud_rest_device_message`
-  * :ref:`nrf_cloud_rest_cell_location`
-  * :ref:`nrf_cloud_rest_fota`
+  * nRF Cloud REST Device Message sample
+  * nRF Cloud REST cellular location sample
+  * nRF Cloud REST FOTA sample
 
 * Deprecated the LTE Sensor Gateway sample.
   It is no longer maintained.
@@ -670,17 +670,17 @@ Cellular samples
     * The sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
     * The sample by enabling the :ref:`lib_at_shell` library to allow the nRF Cloud Utils to interface with the device.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
   * Removed Provisioning service and JITP.
 
-* :ref:`nrf_cloud_rest_cell_location` sample:
+* Cellular: nRF Cloud REST cellular location sample:
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
   * Removed JITP.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
   * Updated the sample to use Zephyr's :ref:`zephyr:conn_mgr_docs` feature.
   * Fixed SMP FOTA for the nRF9160 DK.

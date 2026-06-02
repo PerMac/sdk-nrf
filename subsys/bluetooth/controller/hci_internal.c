@@ -671,6 +671,11 @@ void hci_internal_supported_commands(sdc_hci_ip_supported_commands_t *cmds)
 #endif /* CONFIG_BT_CENTRAL */
 	cmds->hci_le_read_minimum_supported_connection_interval = 1;
 #endif /* CONFIG_BT_CTLR_SHORTER_CONNECTION_INTERVALS */
+
+#if defined(CONFIG_BT_CTLR_LE_FLUSHABLE_ACL_DATA)
+	cmds->hci_read_automatic_flush_timeout = 1;
+	cmds->hci_write_automatic_flush_timeout = 1;
+#endif /* CONFIG_BT_CTLR_LE_FLUSHABLE_ACL_DATA */
 }
 
 #if defined(CONFIG_BT_HCI_VS)
@@ -1754,6 +1759,11 @@ static uint8_t vs_cmd_put(uint8_t const *const cmd, uint8_t *const raw_event_out
 	case SDC_HCI_OPCODE_CMD_VS_ENABLE_PERIODIC_ADV_EVENT_COUNTER_REPORTS:
 		return sdc_hci_cmd_vs_enable_periodic_adv_event_counter_reports(
 		(sdc_hci_cmd_vs_enable_periodic_adv_event_counter_reports_t const *)cmd_params);
+#endif
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+	case SDC_HCI_OPCODE_CMD_VS_TRANSMITTER_CARRIER_TEST:
+		return sdc_hci_cmd_vs_transmitter_carrier_test(
+		(sdc_hci_cmd_vs_transmitter_carrier_test_t const *)cmd_params);
 #endif
 	default:
 		return BT_HCI_ERR_UNKNOWN_CMD;

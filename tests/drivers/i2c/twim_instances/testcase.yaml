@@ -3,7 +3,7 @@ common:
     - drivers
     - ci_tests_drivers_i2c
   harness: ztest
-  timeout: 210
+  timeout: 60
   harness_config:
     fixture: gpio_loopback
 
@@ -19,6 +19,7 @@ tests:
       - nrf54ls05dk/nrf54ls05a/cpuapp
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lc10dk/nrf54lc10a/cpuapp
       - nrf9251dk/nrf9251/cpuapp
       - nrf9251dk/nrf9251/cpuppr
     integration_platforms:

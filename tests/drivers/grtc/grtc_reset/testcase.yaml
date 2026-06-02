@@ -17,11 +17,14 @@ tests:
       - nrf54ls05dk/nrf54ls05a/cpuapp
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lc10dk/nrf54lc10a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     harness_config:
       pytest_root:
         - "pytest/tests.py::test_grtc_after_reset_system"
+      pytest_args:
+        - "--limits-path=${ZEPHYR_BASE}/../nrf/tests/drivers/grtc/grtc_reset/pytest/limits.json"
 
   drivers.grtc.test_grtc_after_reset_pin:
     platform_allow:
@@ -34,12 +37,16 @@ tests:
       - nrf54ls05dk/nrf54ls05a/cpuapp
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lc10dk/nrf54lc10a/cpuapp
       - nrf9251dk/nrf9251/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     harness_config:
       pytest_root:
         - "pytest/tests.py::test_grtc_after_reset_pin"
+      pytest_args:
+        - "--limits-path=${ZEPHYR_BASE}/../nrf/tests/drivers/grtc/grtc_reset/pytest/limits.json"
+
 
   drivers.grtc.test_mcuboot_grtc_no_uninit:
     platform_allow:
@@ -52,6 +59,7 @@ tests:
       - nrf54ls05dk/nrf54ls05a/cpuapp
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lc10dk/nrf54lc10a/cpuapp
       - nrf9251dk/nrf9251/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
@@ -60,6 +68,8 @@ tests:
     harness_config:
       pytest_root:
         - "pytest/tests.py::test_mcuboot_grtc_no_uninit"
+      pytest_args:
+        - "--limits-path=${ZEPHYR_BASE}/../nrf/tests/drivers/grtc/grtc_reset/pytest/limits.json"
 
   drivers.grtc.test_mcuboot_grtc_uninit:
     platform_allow:
@@ -72,6 +82,7 @@ tests:
       - nrf54ls05dk/nrf54ls05a/cpuapp
       - nrf54ls05dk/nrf54ls05b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lc10dk/nrf54lc10a/cpuapp
       - nrf9251dk/nrf9251/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
@@ -82,3 +93,5 @@ tests:
     harness_config:
       pytest_root:
         - "pytest/tests.py::test_mcuboot_grtc_uninit"
+      pytest_args:
+        - "--limits-path=${ZEPHYR_BASE}/../nrf/tests/drivers/grtc/grtc_reset/pytest/limits.json"

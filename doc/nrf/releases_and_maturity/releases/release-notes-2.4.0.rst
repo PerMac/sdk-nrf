@@ -81,7 +81,7 @@ The following list includes the summary of the most relevant changes introduced 
   * nRF Cloud library:
 
     * nRF Cloud Alert library, which enables applications to generate and transmit messages that comply with the alert features of nRF Cloud.
-    * :ref:`lib_nrf_cloud_log`, which enables applications to generate and transmit messages that comply with the logs features of nRF Cloud.
+    * nRF Cloud Logging library, which enables applications to generate and transmit messages that comply with the logs features of nRF Cloud.
 
 * Improved:
 
@@ -118,7 +118,7 @@ Supported modem firmware
 See `Modem firmware compatibility matrix`_ for an overview of which modem firmware versions have been tested with this version of the |NCS|.
 
 Use the latest version of the nRF Programmer app of `nRF Connect for Desktop`_ to update the modem firmware.
-See the `Programming nRF91 Series DK firmware` page for instructions.
+See the `Programming nRF91 Series DK firmware`_ page for instructions.
 
 Modem-related libraries and versions
 ====================================
@@ -601,11 +601,11 @@ nRF9160 samples
     * Sending of log messages directly to nRF Cloud.
     * Overlay to enable `Zephyr Logging`_ backend for full logging to nRF Cloud.
 
-* :ref:`nrf_cloud_rest_fota` sample:
+* Cellular: nRF Cloud REST FOTA sample:
 
     * Updated the sample by enabling external flash in the nRF9160 DK devicetree overlays for v0.14.0 or later versions, as it is now disabled in the Zephyr board definition.
 
-* :ref:`nrf_cloud_rest_device_message` sample:
+* Cellular: nRF Cloud REST Device Message sample:
 
   * Added:
 
@@ -663,7 +663,7 @@ This section provides detailed lists of changes by :ref:`library <libraries>`.
 Binary libraries
 ----------------
 
-* Added the standalone LE Audio controller for nRF5340 library, originally a part of the :ref:`nrf53_audio_app` application.
+* Added the standalone LE Audio controller for nRF5340 library, originally a part of the :ref:`nrf_audio_app` application.
 * :ref:`liblwm2m_carrier_readme` library:
 
   * Updated to v3.2.0.
@@ -767,7 +767,7 @@ Modem libraries
 Libraries for networking
 ------------------------
 
-* Added the :ref:`lib_nrf_cloud_log` library for logging to nRF Cloud.
+* Added the nRF Cloud Logging library library for logging to nRF Cloud.
 
 * :ref:`lib_nrf_cloud` library:
 
@@ -791,7 +791,7 @@ Libraries for networking
 
   * Removed unused internal codec function ``nrf_cloud_format_single_cell_pos_req_json()``.
 
-* :ref:`lib_nrf_cloud_rest` library:
+* nRF Cloud REST library:
 
   * Updated:
 
