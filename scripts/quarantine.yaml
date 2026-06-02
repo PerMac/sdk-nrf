@@ -23,7 +23,7 @@
 - scenarios:
     - kmu.west.provision.verify_keys_in_app
   platforms:
-    - nrf54lm20dk/nrf54lm20b/cpuapp
+    - all
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39210"
 
 - scenarios:
@@ -39,7 +39,7 @@
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39216"
 
 - scenarios:
-    - nrf.extended.sample.basic.blinky
+    - nrf.extended.sample.*
   platforms:
     - nrf54lm20dongle/nrf54lm20b/cpuapp
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-39226"
