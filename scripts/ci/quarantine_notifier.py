@@ -110,6 +110,40 @@ def find_owners(filepath: str, compiled_specs: list[tuple[str, list[str]]]) -> s
 COMMENT_MARKER = "<!-- quarantine-notifier -->"
 ALL_PLATFORMS_TOKEN = "__ALL_PLATFORMS__"
 ALL_SCENARIOS_TOKEN = "__ALL_SCENARIOS__"
+ALL_PLATFORMS_LABEL = "all platforms"
+
+
+def _format_plat_str(plats: set[str]) -> str:
+    """Format a set of platform names for display."""
+    if ALL_PLATFORMS_TOKEN in plats:
+        return ALL_PLATFORMS_LABEL
+    if plats:
+        return ", ".join(sorted(plats))
+    return "-"
+
+
+def _format_scenario_entries(
+    entries: list[tuple[str | None, str]],
+    plat_map: dict[str | None, set[str]],
+    link_fn,
+    *,
+    with_parens: bool = False,
+) -> list[str]:
+    """Format (scenario, path) pairs into Markdown list lines."""
+    lines = []
+    for scen, path in sorted(entries):
+        plat_str = _format_plat_str(plat_map.get(scen, set()))
+        label = "all scenarios" if scen == ALL_SCENARIOS_TOKEN else (scen or "")
+        loc = f"(defined in {link_fn(path)})" if with_parens else f"defined in {link_fn(path)}"
+        lines.append(f"- `{label}` (platforms: {plat_str}) {loc}")
+    return lines
+
+
+def _append_section(title: str, items: list[str], lines: list[str]) -> None:
+    if items:
+        lines.append(f"### {title}")
+        lines.extend(items)
+        lines.append("")
 
 
 def make_comment(
@@ -126,20 +160,14 @@ def make_comment(
     all_owner_keys = sorted(
         set(owner_to_added.keys()) | set(owner_to_removed.keys()), key=str.lower
     )
-    any_owned = bool(all_owner_keys)
     any_unowned = bool(unowned_added or unowned_removed)
 
-    if not any_owned and not any_unowned and not platform_only_added and not platform_only_removed:
+    nothing = not all_owner_keys and not any_unowned
+    if nothing and not platform_only_added and not platform_only_removed:
         return ""  # nothing to notify
 
     def link(path: str) -> str:
         return f"{path}" if repo_full else path
-
-    def section(title: str, items: list[str], lines: list[str]):
-        if items:
-            lines.append(f"### {title}")
-            lines.extend(items)
-            lines.append("")
 
     lines: list[str] = []
     lines.append(COMMENT_MARKER)
@@ -147,78 +175,47 @@ def make_comment(
 
     for key in all_owner_keys:
         owners = [o.strip() for o in key.split(",") if o.strip()]
-        mention = ", ".join(owners) if owners else "_(no owners found)_"
-        mention = mention if mention else "_(no owners found)_"
+        mention = ", ".join(owners) or "_(no owners found)_"
         lines.append(
             f"{mention}: Please take a note of quarantine changes for scenarios "
             f"under your maintainership."
         )
-
-        add_lines: list[str] = []
-        del_lines: list[str] = []
-
-        for scen, path in sorted(owner_to_added.get(key, [])):
-            plats = scenario_to_added_platforms.get(scen, set())
-            plat_str = "all platforms" if ALL_PLATFORMS_TOKEN in plats else ", ".join(sorted(plats))
-
-            if scen == ALL_SCENARIOS_TOKEN:
-                scen = "all scenarios"
-
-            add_lines.append(f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}")
-
-        for scen, path in sorted(owner_to_removed.get(key, [])):
-            plats = scenario_to_removed_platforms.get(scen, set())
-            plat_str = "all platforms" if ALL_PLATFORMS_TOKEN in plats else ", ".join(sorted(plats))
-
-            if scen == ALL_SCENARIOS_TOKEN:
-                scen = "all scenarios"
-
-            del_lines.append(f"- `{scen}` (platforms: {plat_str}) defined in {link(path)}")
-
-        section("Added", add_lines, lines)
-        section("Removed", del_lines, lines)
+        add_lines = _format_scenario_entries(
+            owner_to_added.get(key, []), scenario_to_added_platforms, link
+        )
+        del_lines = _format_scenario_entries(
+            owner_to_removed.get(key, []), scenario_to_removed_platforms, link
+        )
+        _append_section("Added", add_lines, lines)
+        _append_section("Removed", del_lines, lines)
         lines.append("---")
 
     if any_unowned:
-        header = "### ⚠️ Missing CODEOWNERS"
-        lines.append(header)
-
+        lines.append("### ⚠️ Missing CODEOWNERS")
         if unowned_added:
             lines.append("**Added to quarantine – no owners resolved:**")
-            for scen, path in sorted(unowned_added):
-                plats = scenario_to_added_platforms.get(scen, set())
-                plat_str = (
-                    "all platforms"
-                    if ALL_PLATFORMS_TOKEN in plats
-                    else ", ".join(sorted(plats))
-                    if plats
-                    else "-"
+            lines.extend(
+                _format_scenario_entries(
+                    unowned_added, scenario_to_added_platforms, link, with_parens=True
                 )
-                lines.append(f"- `{scen}` (platforms: {plat_str}) (defined in {link(path)})")
-
+            )
         if unowned_removed:
             if unowned_added:
                 lines.append("")
             lines.append("**Removed from quarantine – no owners resolved:**")
-            for scen, path in sorted(unowned_removed):
-                plats = scenario_to_removed_platforms.get(scen, set())
-                plat_str = (
-                    "all platforms"
-                    if ALL_PLATFORMS_TOKEN in plats
-                    else ", ".join(sorted(plats))
-                    if plats
-                    else "-"
+            lines.extend(
+                _format_scenario_entries(
+                    unowned_removed, scenario_to_removed_platforms, link, with_parens=True
                 )
-                lines.append(f"- `{scen}` (platforms: {plat_str}) (defined in {link(path)})")
-
+            )
         lines.append("---")
 
     platform_add_lines = [f"- Platform {p} is quarantined" for p in sorted(platform_only_added)]
     platform_del_lines = [
         f"- Platform {p} quarantine removed" for p in sorted(platform_only_removed)
     ]
-    section("Added (platform-only)", platform_add_lines, lines)
-    section("Removed (platform-only)", platform_del_lines, lines)
+    _append_section("Added (platform-only)", platform_add_lines, lines)
+    _append_section("Removed (platform-only)", platform_del_lines, lines)
 
     return "\n".join(lines).strip() + "\n"
 
