@@ -73,28 +73,33 @@ def expand_configurations(
     return expanded
 
 
+def _extract_scenarios_from_yaml(p: Path, repo_parent: Path) -> dict[str, str]:
+    """Return {scenario_name: relative_path} for all scenarios defined in a YAML file."""
+    try:
+        data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        tests = data.get("tests", {})
+        if not isinstance(tests, dict):
+            return {}
+        rel = p.resolve().relative_to(repo_parent.resolve()).as_posix()
+        return {str(s).strip(): rel for s in tests if str(s).strip()}
+    except Exception as e:
+        print(f"Error processing {p}: {e}")
+        return {}
+
+
 def discover_scenarios(repo_root: Path) -> dict[str, set[str]]:
     """
     Map: scenario_name -> set(yaml_paths_defining_it)
     Keys in top-level 'tests:' mapping of each YAML are Twister scenario names.
     """
+    repo_parent = repo_root.parent
     mapping: dict[str, set[str]] = {}
     for pattern in SCENARIO_YAML_GLOBS:
-        for p in repo_root.parent.glob(pattern):
+        for p in repo_parent.glob(pattern):
             if not p.is_file():
                 continue
-            try:
-                data = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-                tests = data.get("tests", {})
-                if isinstance(tests, dict):
-                    for scenario in tests:
-                        s = str(scenario).strip()
-                        if s:
-                            rel = p.resolve().relative_to(repo_root.parent.resolve()).as_posix()
-                            mapping.setdefault(s, set()).add(rel)
-            except Exception as e:
-                print(f"Error processing {p}: {e}")
-                continue
+            for scenario, rel_path in _extract_scenarios_from_yaml(p, repo_parent).items():
+                mapping.setdefault(scenario, set()).add(rel_path)
     return mapping
 
 
@@ -132,6 +137,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _report_configurations(label: str, configs: set, symbol: str) -> None:
+    """Print a summary of added or removed configurations."""
+    if configs:
+        print(f"Configurations {label} ({len(configs)}):")
+        for config in sorted(configs):
+            print(f"  {symbol} {config}")
+    else:
+        print(f"No configurations {label.lower()}.")
+    print()
+
+
 def main() -> int:
     args = parse_args()
 
@@ -145,6 +161,7 @@ def main() -> int:
 
     suffix = file1.stem.split("quarantine")[1]
 
+    outdir = Path.cwd()
     if args.outdir:
         outdir = Path(args.outdir).resolve(strict=False)
         try:
@@ -152,8 +169,6 @@ def main() -> int:
         except Exception as e:
             print(f"Error: unable to create output directory '{outdir}': {e}")
             return 1
-    else:
-        outdir = Path.cwd()
 
     scenario_map = discover_scenarios(root)
 
@@ -162,23 +177,8 @@ def main() -> int:
         file1, file2, scenario_map
     )
 
-    if removed_configurations:
-        print(f"Configurations REMOVED ({len(removed_configurations)}):")
-        for config in sorted(removed_configurations):
-            print(f"  - {config}")
-        print()
-    else:
-        print("No configurations removed.")
-        print()
-
-    if added_configurations:
-        print(f"Configurations ADDED ({len(added_configurations)}):")
-        for config in sorted(added_configurations):
-            print(f"  + {config}")
-        print()
-    else:
-        print("No configurations added.")
-        print()
+    _report_configurations("REMOVED", removed_configurations, "-")
+    _report_configurations("ADDED", added_configurations, "+")
 
     total_changes = len(added_configurations) + len(removed_configurations)
     if total_changes == 0:
