@@ -12,6 +12,7 @@
     - sample.benchmark.coremark.flash_and_run.nrf7120
   platforms:
     - nrf7120dk/nrf7120/cpuapp
+    - nrf9160dk@0.14.0/nrf9160/ns
   comment: "https://nordicsemi.atlassian.net/browse/NCSDK-38741"
 
 - scenarios:
@@ -50,7 +51,6 @@
     - drivers.uart.uart_latency.int_driven.fast
     - drivers.uart.uart_latency.poll.fast
   platforms:
-    - nrf9251dk@0.1.0/nrf9251/cpuflpr
     - nrf9251dk@0.1.0/nrf9251/cpuflpr/xip
   comment: "https://nordicsemi.atlassian.net/browse/NRFX-9393"
 
