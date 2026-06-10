@@ -126,16 +126,13 @@ def _format_scenario_entries(
     entries: list[tuple[str | None, str]],
     plat_map: dict[str | None, set[str]],
     link_fn,
-    *,
-    with_parens: bool = False,
 ) -> list[str]:
     """Format (scenario, path) pairs into Markdown list lines."""
     lines = []
     for scen, path in sorted(entries):
         plat_str = _format_plat_str(plat_map.get(scen, set()))
         label = "all scenarios" if scen == ALL_SCENARIOS_TOKEN else (scen or "")
-        loc = f"(defined in {link_fn(path)})" if with_parens else f"defined in {link_fn(path)}"
-        lines.append(f"- `{label}` (platforms: {plat_str}) {loc}")
+        lines.append(f"- `{label}` (platforms: {plat_str}) defined in {link_fn(path)}")
     return lines
 
 
@@ -196,7 +193,7 @@ def make_comment(
             lines.append("**Added to quarantine – no owners resolved:**")
             lines.extend(
                 _format_scenario_entries(
-                    unowned_added, scenario_to_added_platforms, link, with_parens=True
+                    unowned_added, scenario_to_added_platforms, link
                 )
             )
         if unowned_removed:
@@ -205,7 +202,7 @@ def make_comment(
             lines.append("**Removed from quarantine – no owners resolved:**")
             lines.extend(
                 _format_scenario_entries(
-                    unowned_removed, scenario_to_removed_platforms, link, with_parens=True
+                    unowned_removed, scenario_to_removed_platforms, link
                 )
             )
         lines.append("---")
